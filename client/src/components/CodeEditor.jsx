@@ -2,13 +2,14 @@ import React, { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import axios from "axios";
-// import { io } from "socket.io-client";
+import { io } from "socket.io-client";
 import FileBar from "./FileBar";
 import MonacoCodeEditor from "./MonacoCodeEditor";
 import TopBar from "./TopBar";
 import Terminal from "./Terminal";
 import AppContext from "../context/Context";
 import ShareWindow from "./ShareWindow";
+const socket = io("http://localhost:8000");
 const CodeEditor = () => {
   const token = localStorage.getItem("token");
   const extensionMap = {
@@ -20,7 +21,7 @@ const CodeEditor = () => {
   }
   const {apiUrl} = useContext(AppContext);
   const [shareWindow,setShareWindow] = useState(false);
-  const [editorWidth, setEditorWidth] = useState("80vw");
+  const [editorWidth, setEditorWidth] = useState("90vw");
   const { id } = useParams();
   const [fileBar, setFileBar] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -32,6 +33,7 @@ const CodeEditor = () => {
   const handleKeyDown = (event) => {
     if (event.ctrlKey && event.key === "s") {
       event.preventDefault();
+      console.log(selectedFileContent);
       console.log(selectedFile);
       console.log(selectedFile._id);
       axios
@@ -51,8 +53,8 @@ const CodeEditor = () => {
   };
   const handleCodeChange = (e)=>{
  
-    setSelectedFileContent(e);
     console.log(selectedFileContent);
+    setSelectedFileContent(e);
     // socket.emit("code-change",{selectedFile,selectedFileContent});
   }
   useEffect(() => {
@@ -81,9 +83,10 @@ const CodeEditor = () => {
     
   }, []);
 
-
+  const [progress,setProgress] = useState(false);
   const handleRun = async () => {
     console.log(selectedFileContent);
+    setProgress(true);
     try{
       console.log(language);
     const result = await axios
@@ -95,10 +98,12 @@ const CodeEditor = () => {
         Authorization:`Bearer ${token}`
       }
     })
+    setProgress(false);
     console.log(result.data.output);
     setExecResult({result:result.data.output,error:false});
   }catch(e){
     console.log(e);
+    setProgress(false);
     setExecResult({result:e.response.data.error,error:true});
   }
     
@@ -108,17 +113,24 @@ const CodeEditor = () => {
   const closeTerminal = ()=>{
     setTerminal(false);
   }
-
-  const handleShare = async()=>{
-    
+  const handleFileSelection = (file)=>{
+    console.log(file);
+    setSelectedFile(file);
+    console.log("File:", file);
+    setLanguage(extensionMap[file.type]);
+    setSelectedFileContent(file.content);
+    console.log(`File selected: ${file.name}`);
+    console.log(selectedFile);
   }
+  
   const toggleShareWindow = () =>{
     setShareWindow(!shareWindow);
   }
+  const enableShare = true;
   return (
     <div className="flex flex-col">
       
-      <TopBar props = {{handleRun,toggleShareWindow}}/>
+      <TopBar props = {{handleRun,toggleShareWindow,enableShare}}/>
       <div className="flex border border-black bg-black text-white">
         <div
           className={`h-[96vh] w-[4vw] bg-gray-700 transition-all duration-300`}>
@@ -126,7 +138,7 @@ const CodeEditor = () => {
             className="cursor-pointer p-2 bg-gray-600 hover:bg-gray-500"
             onClick={() => {
               setFileBar(!fileBar);
-              setEditorWidth(fileBar ? "70vw" : "80vw");
+              setEditorWidth(fileBar ? "80vw" : "90vw");
               console.log(editorWidth);
             }}>
             Files
@@ -142,7 +154,8 @@ const CodeEditor = () => {
               repo,
               fetchRepo,
               setLanguage,
-              extensionMap
+              extensionMap,
+              handleFileSelection
             }}
           />
         )}
@@ -165,7 +178,7 @@ const CodeEditor = () => {
           {
             shareWindow && <ShareWindow props={{toggleShareWindow,id}}/>
           }
-          {terminal && <Terminal props={{terminal,closeTerminal,execResult}}/>}
+          {terminal && <Terminal props={{terminal,closeTerminal,execResult,progress}}/>}
         </div>
       </div>
     </div>

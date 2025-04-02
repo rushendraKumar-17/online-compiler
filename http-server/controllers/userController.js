@@ -9,7 +9,7 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
         const user = await userModel.create({ name,email, password,teammates:[],repos:[] });
-        const token = jwt.sign({ id: userModel._id,email }, process.env.JWT_SECRET, { expiresIn: '30d' });
+        const token = jwt.sign({ id: user._id,email }, process.env.JWT_SECRET, { expiresIn: '30d' });
         res.status(201).json({ token,user:{name,email,id:user._id},teammates:[] });
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
@@ -21,7 +21,8 @@ const loginUser = async (req, res) => {
     try {
         const user = await userModel.findOne({ email });
         if (user && password === user.password) {
-            const token = jwt.sign({ id: userModel._id,email }, process.env.JWT_SECRET, { expiresIn: '30d' });
+            
+            const token = jwt.sign({ id: user._id,email }, process.env.JWT_SECRET, { expiresIn: '30d' });
             res.json({ token,user:{email,name:user.name,id:user._id,teammates:user.teammates} });
         } else {
             res.status(401).json({ message: 'Invalid credentials' });
@@ -53,7 +54,13 @@ const getUser = async(req,res)=>{
     if(!token){
         return res.status(400).json({message:"Token not found"});
     }
-    const decoded =await jwt.verify(token,process.env.JWT_SECRET);
+    let decoded;
+    try{
+    decoded =await jwt.verify(token,process.env.JWT_SECRET);
+    }
+    catch(e){
+        return res.status(400).json({message:"Invalid signature"});
+    }
     const user = await userModel.findOne({email:decoded.email});
     if(!user){
         return res.status(404).json("Invalid token");
@@ -73,4 +80,6 @@ const getTeammates = async(req,res)=>{
     console.log(teamMates);
     res.json({teamMates});
 }
+
+
 export default {loginUser,registerUser,addTeamMate,getUser,getTeammates};

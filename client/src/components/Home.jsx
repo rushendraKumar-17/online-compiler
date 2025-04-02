@@ -14,7 +14,7 @@ const Home = () => {
   const [repoName, setRepoName] = useState('');
   const [newRepoWindow, setNewRepoWindow] = useState(false);
   const token = localStorage.getItem('token');
-  
+  const [repos,setRepos] = useState([]);
 
   const handleCreateNewRepo = async (e) => {
     e.preventDefault();
@@ -29,13 +29,12 @@ const Home = () => {
       setRepos([...repos, response.data]);
       setNewRepoWindow(false);
       setRepoName('');
-
     }
 
   };
 
   return (
-    <div className='flex h-[100vh] z-10 w-[98vw]'>
+    <div className='flex h-[90vh] z-10 w-[98vw]'>
       <Sidebar />
       <div className='w-full'>
       <Routes>

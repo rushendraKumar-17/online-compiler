@@ -91,8 +91,9 @@ export const saveCode = async (req, res) => {
   console.log(code);
   try {
     const file = await fileModel.findById(id);
+    console.log(file);
     file.content = code;
-    file.save();
+    await file.save();
     return res.status(200).send("File saved successfully");
   } catch (e) {
     console.log(e);

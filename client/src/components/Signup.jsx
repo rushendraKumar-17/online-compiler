@@ -25,7 +25,7 @@ const Signup = () => {
             const response = await axios.post('http://localhost:8000/api/user/register', formData);
             if(response.status == 201){
                 setUser(response.data.user);
-                navigate("/");
+                navigate("/home");
             }else{
                 alert("Error in signing up");
                 console.log(response);

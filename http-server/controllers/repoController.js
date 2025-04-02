@@ -5,9 +5,9 @@ import userModel from "../models/userModel.js";
 
 const getRepoById = async (req, res) => {
   const { id } = req.params;
-
   try {
     const files = await fileModel.find({parent:id});
+    console.log(req.user);
     res.status(200).json(files);
   } catch (error) {
     console.error( error);
@@ -37,6 +37,7 @@ export const createNewRepo = async(req,res)=>{
 }
 
 export const getAllRepos = async(req, res) => {
+  console.log(req.user);
   const repos = await repoModel.find({createdBy:req.user.id});
   res.status(200).json(repos);
 }
@@ -68,4 +69,12 @@ export const shareRepo = async(req,res)=>{
     res.status(500).send("Internal Server Error");
   }
 }
-export default { getRepoById,createNewRepo,getAllRepos,shareRepo };
+
+const getSharedRepos = async(req,res)=>{
+  console.log(req.user);
+  const user = await userModel.findOne({email:req.user.email});
+  const sharedRepoIds = user.sharedRepos;
+  const sharedRepos = await repoModel.find({_id:{$in:sharedRepoIds}});
+  res.json({sharedRepos});
+}
+export default { getRepoById,createNewRepo,getAllRepos,shareRepo,getSharedRepos };

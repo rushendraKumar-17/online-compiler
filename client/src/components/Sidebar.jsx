@@ -5,9 +5,7 @@ const Sidebar = () => {
   return (
     <div className="h-full w-[20vw] bg-gray-800 text-white">
       <ul className="space-y-4 p-4">
-        <Link to="/home">
-          <li className="hover:bg-gray-700 p-2 rounded">Home</li>
-        </Link>
+        
         <Link to="/home/repos">
           <li className="hover:bg-gray-700 p-2 rounded">Repos</li>
         </Link>

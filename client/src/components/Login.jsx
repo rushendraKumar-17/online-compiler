@@ -28,7 +28,7 @@ const Login = () => {
       if(token){
         localStorage.setItem('token',token);
         setUser(user);
-        navigate("/");
+        navigate("/home");
       }
       // Handle successful login here
     } catch (error) {

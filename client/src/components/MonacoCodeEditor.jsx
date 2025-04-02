@@ -8,7 +8,7 @@ const CodeEditor = ({props}) => {
 
   return (
     <MonacoEditor
-      height="90vh"
+      height="80vh"
       width={width}
       language={language}
       theme="vs-dark"

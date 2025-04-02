@@ -6,10 +6,12 @@ const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [teammates,setTeammates] = useState([]);
+  const [sharedRepos,setSharedRepos] = useState([]);
   const apiUrl = "http://localhost:8000";
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const response = axios
+    if(token){
+    axios
       .get(`${apiUrl}/api/user/getUser`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -32,10 +34,22 @@ export const AppProvider = ({ children }) => {
 
         console.log(e);
       })
+
+      axios.get(`${apiUrl}/repo/getSharedRepos`,{
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).then((res)=>{
+        setSharedRepos(res.data.sharedRepos);
+        console.log(res); 
+      }).catch(e=>{
+        console.log(e);
+      })
+    }
   }, []);
 
   return (
-    <AppContext.Provider value={{ user, setUser, apiUrl,teammates }}>
+    <AppContext.Provider value={{ user, setUser, apiUrl,teammates ,sharedRepos}}>
       {children}
     </AppContext.Provider>
   );

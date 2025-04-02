@@ -8,19 +8,18 @@ import Signup from './components/Signup';
 import Login from "./components/Login"
 const App = () => {
   const navigate = useNavigate();
-  useEffect(()=>{
-    navigate('/home')
-  },[])
+  
   return (
     <div>
       <Navbar />
       <Routes>
+        <Route path='/' element={<Home/>}/>
         <Route path='/home/*' element={<Home/>}/>
         <Route path="/login" element = {<Login />}/>
         <Route path='/register' element={<Signup />} />
         <Route path='/code-editor' element={<CodeEditor/>}/>
         <Route path='/repos/:id' element={<CodeEditor />}/>
-        <Route path='/repo/share/:id' element={<SharingWindow />}/>
+        <Route path='/repo/share/code-editor/:id' element={<SharingWindow />}/>
       </Routes>
     </div>
   )
