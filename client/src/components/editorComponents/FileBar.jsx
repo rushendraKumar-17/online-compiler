@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import axios from "axios";
 import FileIcons from "./FileIcons";
-import AppContext from "../context/Context";
+import AppContext from "../../context/Context";
 const FileBar = ({ props }) => {
   const {
     selectedFile,

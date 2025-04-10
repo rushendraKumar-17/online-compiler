@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import AppContext from "../context/Context";
+import AppContext from "../../context/Context";
 import axios from "axios";
 
 const ShareWindow = ({ props }) => {

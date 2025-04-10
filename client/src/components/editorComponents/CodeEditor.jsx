@@ -7,7 +7,7 @@ import FileBar from "./FileBar";
 import MonacoCodeEditor from "./MonacoCodeEditor";
 import TopBar from "./TopBar";
 import Terminal from "./Terminal";
-import AppContext from "../context/Context";
+import AppContext from "../../context/Context.jsx";
 import ShareWindow from "./ShareWindow";
 const socket = io("http://localhost:8000");
 const CodeEditor = () => {

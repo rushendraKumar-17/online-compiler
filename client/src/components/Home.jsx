@@ -2,11 +2,10 @@ import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link, Outlet, Routes, useNavigate,Route } from 'react-router-dom';
 import AppContext from "../context/Context";
-import Sidebar from "./Sidebar.jsx";
-import RepositoriesPage from "./RepositoriesPage.jsx";
-import LoginRequired from "./LoginRequired.jsx";
+import Sidebar from './editorComponents/Sidebar';
 import WelcomePage from "./WelcomePage.jsx";
-import TeammatesPage from './TeammatesPage.jsx';
+import RepositoriesPage from "./RepositoriesPage.jsx";
+import TeammatesPage from "./TeammatesPage.jsx";
 import Invitations from "./Invitations.jsx";
 const Home = () => {
   const navigate = useNavigate();
@@ -35,7 +34,7 @@ const Home = () => {
 
   return (
     <div className='flex h-[90vh] z-10 w-[98vw]'>
-      <Sidebar />
+      <Sidebar/>
       <div className='w-full'>
       <Routes>
         <Route path='/' element={<WelcomePage />}/>
