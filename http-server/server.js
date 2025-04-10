@@ -60,6 +60,17 @@ io.on("connection", (socket) => {
     io.to(to).emit("ice-candidate", { candidate, from: socket.id });
   });
 
+  socket.on("message", (message, time, sender,roomId) => {
+    console.log(`Message from ${sender}: ${message} at ${time}`);
+    // Emit the message to all users in the room
+    rooms[roomId].forEach((userId) => {
+      if (userId !== socket.id) {
+        io.to(userId).emit("message", message, time, sender);
+      }
+    } 
+    );
+  }
+  );
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
 

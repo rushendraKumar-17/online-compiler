@@ -2,20 +2,26 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import Controls from "./Controls";
 import AppContext from "../../context/Context";
-
+import ChatWindow from "./ChatWindow";
+import Options from "./Options.jsx";
 const App = () => {
   
   const {mediaOptions,setMediaOptions} = useContext(AppContext);
   const videoRef = useRef(null);
   const [video, setVideo] = useState(mediaOptions.video);
   const [audio, setAudio] = useState(mediaOptions.audio);
+  const [chatOpen,setChatOpen] = useState(false);
+  
+  const closeChat = () => {
+    setChatOpen(false);
+  }
   const roomId = "1"; 
   const [userStream, setUserStream] = useState();
   const [peers, setPeers] = useState({});
   const socketRef = useRef(null);
   const peerRefs = useRef({});
   const remoteVideoRefs = useRef({});
-  useEffect(()=>{
+   useEffect(()=>{
     handleJoin();
   },[])
   const disconnectCall = () => {
@@ -211,8 +217,13 @@ const App = () => {
       
       
       <div id="remote-videos" style={{ display: "flex", flexWrap: "wrap" }}></div>
-     
-      <Controls manageStream={manageStream} disconnectCall={disconnectCall}/>
+     {
+        chatOpen && (
+          <ChatWindow closeChat = {closeChat} socket={socketRef} roomId={roomId}/>
+        )
+     }
+      <Controls manageStream={manageStream} disconnectCall={disconnectCall} />
+       
     </div>
   );
 };
