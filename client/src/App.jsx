@@ -8,6 +8,7 @@ import Signup from './components/Signup';
 import Login from "./components/Login"
 import MeetingLandingPage from './components/meetComponents/MeetingLandingPage';
 import Meeting from "./components/meetComponents/Meeting";
+import Editor from './components/meetComponents/Editor';
 const App = () => {
   const navigate = useNavigate();
   return (
@@ -23,6 +24,7 @@ const App = () => {
         <Route path='/repo/share/code-editor/:id' element={<SharingWindow />}/>
         <Route path='/meet/' element={<MeetingLandingPage />}/>
         <Route path="/meet/:id" element={<Meeting />} />
+        <Route path='/editor' element={<Editor />}/>
       </Routes>
     </div>
   )

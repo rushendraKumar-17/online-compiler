@@ -3,70 +3,72 @@ import { io, Socket } from "socket.io-client";
 import Controls from "./Controls";
 import AppContext from "../../context/Context";
 import ChatWindow from "./ChatWindow";
-import Options from "./Options.jsx";
+import Editor from "./Editor.jsx";
+// import Options from "./Options.jsx";
 const App = () => {
-  
-  const {mediaOptions,setMediaOptions} = useContext(AppContext);
+  const { mediaOptions, setMediaOptions } = useContext(AppContext);
   const videoRef = useRef(null);
   const [video, setVideo] = useState(mediaOptions.video);
   const [audio, setAudio] = useState(mediaOptions.audio);
-  const [chatOpen,setChatOpen] = useState(false);
-  
+  const [chatOpen, setChatOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(true);
+  const openChat = () => {
+    setChatOpen(true);
+  };
   const closeChat = () => {
     setChatOpen(false);
-  }
-  const roomId = "1"; 
+  };
+  const roomId = "1";
   const [userStream, setUserStream] = useState();
   const [peers, setPeers] = useState({});
   const socketRef = useRef(null);
   const peerRefs = useRef({});
   const remoteVideoRefs = useRef({});
-   useEffect(()=>{
+  useEffect(() => {
     handleJoin();
-  },[])
+  }, []);
   const disconnectCall = () => {
     // Close all peer connections
     Object.values(peerRefs.current).forEach((peer) => {
       peer.close();
     });
-  
+
     // Clear peer connections
     peerRefs.current = {};
     setPeers({});
-  
+
     // Stop user's media stream
     if (userStream) {
       userStream.getTracks().forEach((track) => track.stop());
       setUserStream(undefined);
     }
-  
+
     // Remove remote video elements
     Object.values(remoteVideoRefs.current).forEach((videoEl) => {
       if (videoEl && videoEl.parentNode) {
         videoEl.parentNode.removeChild(videoEl);
       }
     });
-  
+
     // Clear remote video references
     remoteVideoRefs.current = {};
-  
+
     // Notify server about disconnection
     socketRef.current?.emit("leave-room", { roomId });
-  
+
     // Disconnect socket
     socketRef.current?.disconnect();
     socketRef.current = null;
-  
+
     // Update state
     setJoinedCall(false);
   };
-  
 
   // Manage user media stream settings
   const manageStream = (a, v) => {
     setVideo(v);
     setAudio(a);
-    setMediaOptions({video:v,audio:a});
+    setMediaOptions({ video: v, audio: a });
     if (userStream) {
       userStream.getAudioTracks().forEach((track) => (track.enabled = a));
       userStream.getVideoTracks().forEach((track) => (track.enabled = v));
@@ -96,14 +98,13 @@ const App = () => {
 
   // Initialize WebRTC and connect to socket
   const handleJoin = async () => {
-   
     socketRef.current = io("http://localhost:8000");
 
     socketRef.current.emit("join-room", { roomId });
 
     // Receive existing users when joining a room
     socketRef.current.on("existing-users", ({ users }) => {
-      users.forEach((userId) => createPeerConnection(userId,true));
+      users.forEach((userId) => createPeerConnection(userId, true));
     });
 
     // When a new user joins, create a connection for them
@@ -114,7 +115,9 @@ const App = () => {
     // Handle incoming WebRTC offers
     socketRef.current.on("offer", async ({ offer, from }) => {
       if (!peerRefs.current[from]) await createPeerConnection(from, false);
-      await peerRefs.current[from].setRemoteDescription(new RTCSessionDescription(offer));
+      await peerRefs.current[from].setRemoteDescription(
+        new RTCSessionDescription(offer)
+      );
       const answer = await peerRefs.current[from].createAnswer();
       await peerRefs.current[from].setLocalDescription(answer);
       socketRef.current?.emit("answer", { answer, to: from });
@@ -127,12 +130,13 @@ const App = () => {
         if (pc.signalingState === "have-local-offer") {
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
         } else {
-          console.warn("Skipping setRemoteDescription(answer) - invalid state:", pc.signalingState);
+          console.warn(
+            "Skipping setRemoteDescription(answer) - invalid state:",
+            pc.signalingState
+          );
         }
       }
     });
-    
-    
 
     // Handle incoming ICE candidates
     socketRef.current.on("ice-candidate", ({ candidate, from }) => {
@@ -177,7 +181,9 @@ const App = () => {
         remoteVideoRefs.current[userId] = document.createElement("video");
         remoteVideoRefs.current[userId].autoplay = true;
         remoteVideoRefs.current[userId].playsInline = true;
-        document.getElementById("remote-videos")?.appendChild(remoteVideoRefs.current[userId]);
+        document
+          .getElementById("remote-videos")
+          ?.appendChild(remoteVideoRefs.current[userId]);
       }
       remoteVideoRefs.current[userId].srcObject = event.streams[0];
     };
@@ -211,21 +217,40 @@ const App = () => {
   }, []);
 
   return (
-    <div style={{ width: "100%", height: "100%" ,overflow:"hidden",display:"flex",alignItems:"baseline"}}>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+        display: "flex",
+        // alignItems: "baseline",
+      }}>
+      <div>{
+        editorOpen && <Editor socket={socketRef.current} />
+        }</div>
+      <div style={{ width: chatOpen ? (editorOpen ? "30vw": "60vw" ): "70vw" }}>
+        <video ref={videoRef} autoPlay muted playsInline />
 
-      <video ref={videoRef} autoPlay muted playsInline />
-      
-      
-      <div id="remote-videos" style={{ display: "flex", flexWrap: "wrap" }}></div>
-     {
-        chatOpen && (
-          <ChatWindow closeChat = {closeChat} socket={socketRef} roomId={roomId}/>
-        )
-     }
-      <Controls manageStream={manageStream} disconnectCall={disconnectCall} />
-       
+        <div
+          id="remote-videos"
+          style={{ display: "flex", flexWrap: "wrap" }}></div>
+      </div>
+      <div>
+        {chatOpen && (
+          <ChatWindow
+            closeChat={closeChat}
+            socket={socketRef.current}
+            roomId={roomId}
+          />
+        )}
+      </div>
+      <Controls
+        manageStream={manageStream}
+        disconnectCall={disconnectCall}
+        openChatWindow={openChat}
+      />
     </div>
   );
 };
 
-export default App; 
+export default App;

@@ -28,6 +28,7 @@ const rooms = {}; // key: roomId, value: [socketId1, socketId2]
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
+  socket.on("codeChange")
   socket.on("join-room", ({ roomId }) => {
     console.log(`User ${socket.id} joined room ${roomId}`);
 
@@ -63,6 +64,7 @@ io.on("connection", (socket) => {
   socket.on("message", (message, time, sender,roomId) => {
     console.log(`Message from ${sender}: ${message} at ${time}`);
     // Emit the message to all users in the room
+    console.log(rooms[roomId]);
     rooms[roomId].forEach((userId) => {
       if (userId !== socket.id) {
         io.to(userId).emit("message", message, time, sender);
