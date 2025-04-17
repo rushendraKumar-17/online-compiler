@@ -94,7 +94,9 @@ export const saveCode = async (req, res) => {
     console.log(file);
     file.content = code;
     await file.save();
+    console.log(file.content);
     return res.status(200).send("File saved successfully");
+    
   } catch (e) {
     console.log(e);
     res.status(500).json(e);

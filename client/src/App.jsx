@@ -12,7 +12,7 @@ import Editor from './components/meetComponents/Editor';
 const App = () => {
   const navigate = useNavigate();
   return (
-    <div>
+    <div style={{overflow:'hidden'}}>
       <Navbar />
       <Routes>
         <Route path='/' element={<Home/>}/>

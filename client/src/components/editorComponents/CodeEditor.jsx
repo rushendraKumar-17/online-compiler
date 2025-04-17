@@ -9,6 +9,7 @@ import TopBar from "./TopBar";
 import Terminal from "./Terminal";
 import AppContext from "../../context/Context.jsx";
 import ShareWindow from "./ShareWindow";
+import { File, X } from "lucide-react";
 const socket = io("http://localhost:8000");
 const CodeEditor = () => {
   const token = localStorage.getItem("token");
@@ -30,6 +31,10 @@ const CodeEditor = () => {
   const [language, setLanguage] = useState();
   const [selectedFileContent, setSelectedFileContent] = useState(null);
   const [execResult,setExecResult] = useState();
+  const setSelectedFileFn = (file) => {
+    setSelectedFile(file);
+    console.log("File selected:", file);
+  };
   const handleKeyDown = (event) => {
     if (event.ctrlKey && event.key === "s") {
       event.preventDefault();
@@ -55,6 +60,7 @@ const CodeEditor = () => {
  
     console.log(selectedFileContent);
     setSelectedFileContent(e);
+    console.log(e);
     // socket.emit("code-change",{selectedFile,selectedFileContent});
   }
   useEffect(() => {
@@ -120,7 +126,6 @@ const CodeEditor = () => {
     setLanguage(extensionMap[file.type]);
     setSelectedFileContent(file.content);
     console.log(`File selected: ${file.name}`);
-    console.log(selectedFile);
   }
   
   const toggleShareWindow = () =>{
@@ -133,7 +138,7 @@ const CodeEditor = () => {
       <TopBar props = {{handleRun,toggleShareWindow,enableShare}}/>
       <div className="flex border border-black bg-black text-white">
         <div
-          className={`h-[96vh] w-[4vw] bg-gray-700 transition-all duration-300`}>
+          className={`h-[96vh] w-[3vw] bg-gray-700 transition-all duration-300`}>
           <div
             className="cursor-pointer p-2 bg-gray-600 hover:bg-gray-500"
             onClick={() => {
@@ -141,14 +146,14 @@ const CodeEditor = () => {
               setEditorWidth(fileBar ? "80vw" : "90vw");
               console.log(editorWidth);
             }}>
-            Files
+            <File />
           </div>
         </div>
         {fileBar && (
           <FileBar
             props={{
               selectedFile,
-              setSelectedFile,
+              setSelectedFileFn,
               setSelectedFileContent,
               id,
               repo,

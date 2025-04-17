@@ -1,11 +1,12 @@
 import React, { useContext, useState } from "react";
 import axios from "axios";
 import FileIcons from "./FileIcons";
+import { Button } from "@mui/material";
 import AppContext from "../../context/Context";
 const FileBar = ({ props }) => {
   const {
     selectedFile,
-    setSelectedFile,
+    setSelectedFileFn,
     setSelectedFileContent,
     id,
     repo,
@@ -49,7 +50,7 @@ const FileBar = ({ props }) => {
   };
   const handleFileClick = async(file) => {
     handleFileSelection(file);
-    
+    setSelectedFileFn(file);
   };
 
   const [fileName, setFileName] = useState("");
@@ -62,9 +63,9 @@ const FileBar = ({ props }) => {
             onClick={() => setMainRepo(!mainRepo)}
             className="flex justify-between p-[1vw]">
             <div>{repo.name}</div>
-            <button onClick={handleAddFile} className="border">
+            <Button variant="primary" onClick={handleAddFile} className="border">
               Add file
-            </button>
+            </Button>
           </div>
           {repo &&
             repo.map((file) => (
@@ -77,7 +78,8 @@ const FileBar = ({ props }) => {
               </div>
             ))}
           {newFileWindow && (
-            <div className="absolute top-[30vh]">
+            <div className="absolute top-[30vh] w-[14vw] p-[1vw]" style={{ zIndex: 100,border:"1px solid white" }}>
+              
               <input
                 type="text"
                 value={fileName}
@@ -88,8 +90,8 @@ const FileBar = ({ props }) => {
                 className="bg-slate-600"
               />
               <br />
-              <button onClick={() => setNewFileWindow(false)}>Cancel</button>
-              <button onClick={addFile}>Create</button>
+              <Button onClick={() => setNewFileWindow(false)}>Cancel</Button>
+              <Button onClick={addFile}>Create</Button>
             </div>
           )}
         </div>
