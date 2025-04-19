@@ -1,41 +1,133 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { useContext, useEffect, useRef, useState, useCallback } from "react";
 import Controls from "./Controls";
 import AppContext from "../../context/Context";
 import ChatWindow from "./ChatWindow";
 import Editor from "./Editor.jsx";
+import { useParams } from "react-router-dom";
+import peer from "../services/PeerService.jsx";
+import { useSocket } from "../../context/SocketProvider.jsx";
+import { Button } from "@mui/material";
 // import Options from "./Options.jsx";
 const App = () => {
+  const socket = useSocket();
+  const [messages, setMessages] = useState([]);
+
+  const { id } = useParams();
   const { mediaOptions, setMediaOptions } = useContext(AppContext);
-  const videoRef = useRef(null);
-  const [video, setVideo] = useState(mediaOptions.video);
-  const [audio, setAudio] = useState(mediaOptions.audio);
+  const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+  const [video, setVideo] = useState(true);
+  const [audio, setAudio] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
-  const [editorOpen, setEditorOpen] = useState(true);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [remoteUserSocket, setRemoteUserSocket] = useState(null);
+  const [code, setCode] = useState("");
+  const [language, setLanguage] = useState("python");
+  const changeCode = (c) => {
+    setCode(c);
+  };
+  const changeLanguage = (l) => {
+    setLanguage(l);
+  };
+  const addMessage = (message, time, sender) => {
+    setMessages((prev) => [...prev, { message, time, sender }]);
+  };
+  const openEditor = () => {
+    setEditorOpen(true);
+  };
+  const closeEditor = () => {
+    setEditorOpen(false);
+  };
   const openChat = () => {
     setChatOpen(true);
   };
   const closeChat = () => {
     setChatOpen(false);
   };
-  const roomId = "1";
   const [userStream, setUserStream] = useState();
-  const [peers, setPeers] = useState({});
-  const socketRef = useRef(null);
-  const peerRefs = useRef({});
-  const remoteVideoRefs = useRef({});
+  const [remoteStream, setRemoteStream] = useState(null);
+
+  const joinMeet = () => {
+    socket.emit("join-room", { id });
+    console.log("Joining room");
+  };
   useEffect(() => {
-    handleJoin();
+    getStream();
+    if (socket) {
+      socket.on("codeChange", handleCodeChangeEvent);
+      socket.on("change-language", handleLanguageChangeEvent);
+      socket.on("message", addMessage);
+    }
+    return () => {
+      socket.off("codeChange", handleCodeChangeEvent);
+      socket.on("change-language", handleLanguageChangeEvent);
+      socket.off("message", addMessage);
+    };
+  }, [socket]);
+  const handleCodeChangeEvent = (newCode) => {
+    console.log(newCode);
+    console.log("Got code change event");
+    changeCode(newCode.code);
+  };
+  const handleLanguageChangeEvent = (language) => {
+    console.log("Got language change", language);
+    changeLanguage(language);
+  };
+  useEffect(() => {
+    socket.on("answer", handleAnswer);
+    socket.on("user-joined", handleUserJoined);
+    socket.on("offer", handleOffer);
+    socket.on("nego-needed", handleNegotiationIncoming);
+    socket.on("nego-final", handleNegotiationFinal);
+    // socket.on("ice-candidate",handleIceCandidateReceive);
+    return () => {
+      socket.off("answer", handleAnswer);
+      socket.off("user-joined", handleUserJoined);
+      socket.off("offer", handleOffer);
+      socket.off("nego-needed", handleNegotiationIncoming);
+      socket.off("nego-final", handleNegotiationFinal);
+
+      // socket.off("ice-candidate",handleIceCandidateReceive);
+    };
+  }, [socket]);
+  const handleNegotiationIncoming = async ({ from, offer }) => {
+    console.log("Nego-incoming");
+    const ans = await peer.getAnswer(offer);
+    socket.emit("nego-done", { to: from, answer: ans });
+  };
+  const handleNegotiationFinal = useCallback(async ({ answer }) => {
+    console.log("Nego-done");
+    console.log(answer);
+    await peer.setLocalDescription(answer);
   }, []);
+  useEffect(() => {
+    peer.peer.addEventListener("track", handleTrackEvent);
+    peer.peer.addEventListener("negotiationneeded", handleNegotiation);
+    return () => {
+      peer.peer.removeEventListener("track", handleTrackEvent);
+      peer.peer.removeEventListener("negotiationneeded", handleNegotiation);
+    };
+  }, []);
+
+  const handleNegotiation = useCallback(async () => {
+    console.log("Oops...nego needed");
+    const offer = await peer.getOffer();
+    socket.emit("nego-needed", { offer, to: remoteUserSocket });
+  }, []);
+  const handleTrackEvent = (e) => {
+    console.log("I am getting stream", e);
+    const stream = e.streams;
+    console.log("Remote Stream", stream[0]);
+    setRemoteStream(stream[0]);
+    if (!remoteVideoRef.current.srcObject) {
+      console.log("Setting srcObject");
+      remoteVideoRef.current.srcObject = stream[0];
+    }
+  };
   const disconnectCall = () => {
     // Close all peer connections
-    Object.values(peerRefs.current).forEach((peer) => {
-      peer.close();
-    });
 
-    // Clear peer connections
-    peerRefs.current = {};
-    setPeers({});
+    //
 
     // Stop user's media stream
     if (userStream) {
@@ -50,19 +142,35 @@ const App = () => {
       }
     });
 
-    // Clear remote video references
-    remoteVideoRefs.current = {};
+    socket?.emit("leave-room", { roomId });
 
-    // Notify server about disconnection
-    socketRef.current?.emit("leave-room", { roomId });
-
-    // Disconnect socket
-    socketRef.current?.disconnect();
-    socketRef.current = null;
-
-    // Update state
-    setJoinedCall(false);
+    socket?.disconnect();
   };
+  const handleAnswer = useCallback(async ({ answer, from }) => {
+    console.log("Got answer from ", from);
+    await peer.setLocalDescription(answer);
+    if (userStream) {
+      for (const track of userStream.getTracks()) {
+        console.log("sending tracks");
+        peer.peer.addTrack(track, userStream);
+      }
+    }
+  }, []);
+  const handleUserJoined = useCallback(async ({ newUserId }) => {
+    console.log("User joined:", newUserId);
+    setRemoteUserSocket(newUserId);
+    const offer = await peer.getOffer();
+    console.log("Created offer", offer);
+    socket.emit("offer", { offer, to: newUserId });
+  }, []);
+  const handleOffer = useCallback(async ({ offer, from }) => {
+    console.log("Offer from ", from, offer);
+    setRemoteUserSocket(from);
+
+    const ans = await peer.getAnswer(offer);
+
+    socket.emit("answer", { answer: ans, to: from });
+  }, []);
 
   // Manage user media stream settings
   const manageStream = (a, v) => {
@@ -83,139 +191,24 @@ const App = () => {
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video,
-        audio,
+        video: true,
+        audio: true,
       });
 
       setUserStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+      console.log("My stream", stream);
+      // sendStream(stream);
+      for (const track of stream.getTracks()) {
+        console.log("sending tracks");
+        peer.peer.addTrack(track, stream);
+      }
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
       }
     } catch (error) {
       console.error("Error accessing media devices:", error);
     }
   };
-
-  // Initialize WebRTC and connect to socket
-  const handleJoin = async () => {
-    socketRef.current = io("http://localhost:8000");
-
-    socketRef.current.emit("join-room", { roomId });
-
-    // Receive existing users when joining a room
-    socketRef.current.on("existing-users", ({ users }) => {
-      users.forEach((userId) => createPeerConnection(userId, true));
-    });
-
-    // When a new user joins, create a connection for them
-    socketRef.current.on("user-joined", ({ newUserId }) => {
-      createPeerConnection(newUserId, false);
-    });
-
-    // Handle incoming WebRTC offers
-    socketRef.current.on("offer", async ({ offer, from }) => {
-      if (!peerRefs.current[from]) await createPeerConnection(from, false);
-      await peerRefs.current[from].setRemoteDescription(
-        new RTCSessionDescription(offer)
-      );
-      const answer = await peerRefs.current[from].createAnswer();
-      await peerRefs.current[from].setLocalDescription(answer);
-      socketRef.current?.emit("answer", { answer, to: from });
-    });
-
-    // Handle incoming WebRTC answers
-    socketRef.current.on("answer", async ({ answer, from }) => {
-      const pc = peerRefs.current[from];
-      if (pc) {
-        if (pc.signalingState === "have-local-offer") {
-          await pc.setRemoteDescription(new RTCSessionDescription(answer));
-        } else {
-          console.warn(
-            "Skipping setRemoteDescription(answer) - invalid state:",
-            pc.signalingState
-          );
-        }
-      }
-    });
-
-    // Handle incoming ICE candidates
-    socketRef.current.on("ice-candidate", ({ candidate, from }) => {
-      if (candidate) {
-        peerRefs.current[from]?.addIceCandidate(new RTCIceCandidate(candidate));
-      }
-    });
-
-    // Handle user disconnection
-    // socketRef.current.on("user-left", ({ userId }) => {
-    //   if (peerRefs.current[userId]) {
-    //     peerRefs.current[userId].close();
-    //     delete peerRefs.current[userId];
-    //     setPeers((prev) => {
-    //       const updatedPeers = { ...prev };
-    //       delete updatedPeers[userId];
-    //       return updatedPeers;
-    //     });
-    //   }
-    // });
-  };
-
-  // Create a new peer connection for each user
-  const createPeerConnection = (userId, isInitiator) => {
-    const peerConnection = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-    });
-
-    // Handle ICE candidates
-    peerConnection.onicecandidate = (event) => {
-      if (event.candidate) {
-        socketRef.current?.emit("ice-candidate", {
-          candidate: event.candidate,
-          to: userId,
-        });
-      }
-    };
-
-    // Handle incoming media streams
-    peerConnection.ontrack = (event) => {
-      if (!remoteVideoRefs.current[userId]) {
-        remoteVideoRefs.current[userId] = document.createElement("video");
-        remoteVideoRefs.current[userId].autoplay = true;
-        remoteVideoRefs.current[userId].playsInline = true;
-        document
-          .getElementById("remote-videos")
-          ?.appendChild(remoteVideoRefs.current[userId]);
-      }
-      remoteVideoRefs.current[userId].srcObject = event.streams[0];
-    };
-
-    // Add own media tracks
-    if (userStream) {
-      userStream.getTracks().forEach((track) => {
-        peerConnection.addTrack(track, userStream);
-      });
-    }
-
-    // Store peer connection
-    peerRefs.current[userId] = peerConnection;
-    setPeers((prev) => ({ ...prev, [userId]: peerConnection }));
-
-    // If this user is the initiator, send an offer
-    if (isInitiator) {
-      createAndSendOffer(userId);
-    }
-  };
-
-  // Create and send an offer
-  const createAndSendOffer = async (userId) => {
-    const offer = await peerRefs.current[userId].createOffer();
-    await peerRefs.current[userId].setLocalDescription(offer);
-    socketRef.current?.emit("offer", { offer, to: userId });
-  };
-
-  useEffect(() => {
-    getStream();
-  }, []);
-
   return (
     <div
       style={{
@@ -224,23 +217,90 @@ const App = () => {
         overflow: "hidden",
         display: "flex",
         // alignItems: "baseline",
-      }}>
-      <div>{
-        editorOpen && <Editor socket={socketRef.current} />
-        }</div>
-      <div style={{ width: chatOpen ? (editorOpen ? "30vw": "60vw" ): "70vw" }}>
-        <video ref={videoRef} autoPlay muted playsInline />
-
+      }}
+    >
+      <div>
+        <Button onClick={() => joinMeet()}>Start</Button>
+        {editorOpen && (
+          <Editor
+            socket={socket}
+            id={id}
+            closeEditor={closeEditor}
+            changeCode={changeCode}
+            changeLanguage={changeLanguage}
+            code={code}
+            language={language}
+          />
+        )}
+      </div>
+      <div
+        style={{
+          width: chatOpen ? (editorOpen ? "40vw" : "80vw") : "100vw",
+          padding: "3vh",
+          overflowX: "hidden",
+        }}
+      >
+        <div style={{ width: "30vw", height: "40vh", position: "relative" }}>
+          <video
+            ref={localVideoRef}
+            autoPlay
+            muted
+            playsInline
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              borderRadius: "3vh",
+            }}
+          />
+          <p
+            style={{
+              position: "absolute",
+              bottom: "2vh",
+              left: "2vh",
+              zIndex: 100,
+              color: "white",
+            }}
+          >
+            Me
+          </p>
+        </div>
         <div
           id="remote-videos"
-          style={{ display: "flex", flexWrap: "wrap" }}></div>
+          style={{ display: "flex", flexWrap: "wrap", overflow: "hidden" }}
+        ></div>
+        <div style={{ width: "30vw", height: "40vh", position: "relative" }}>
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            muted
+            playsInline
+            style={{
+              width: "30vw",
+              height: "20vw",
+            }}
+          ></video>
+          <p
+            style={{
+              position: "absolute",
+              bottom: "2vh",
+              left: "2vh",
+              zIndex: 100,
+              color: "white",
+            }}
+          >
+            You
+          </p>
+        </div>
       </div>
       <div>
         {chatOpen && (
           <ChatWindow
             closeChat={closeChat}
-            socket={socketRef.current}
-            roomId={roomId}
+            socket={socket}
+            roomId={id}
+            messages={messages}
+            addMessage={addMessage}
           />
         )}
       </div>
@@ -248,6 +308,7 @@ const App = () => {
         manageStream={manageStream}
         disconnectCall={disconnectCall}
         openChatWindow={openChat}
+        openEditor={openEditor}
       />
     </div>
   );

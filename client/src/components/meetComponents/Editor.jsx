@@ -1,13 +1,57 @@
-import React, { useEffect, useState } from "react";
-import { Play } from "lucide-react";
-import { Button } from "@mui/material";
+import React, { useContext, useEffect, useState } from "react";
+import { Play, PanelRight } from "lucide-react";
+import { Button, Typography } from "@mui/material";
 import MonacoEditor from "react-monaco-editor";
-import {} from 'react-router'
-const Editor = ({socket}) => {
-  const [code,setCode] = useState("");
-  const {id} = useParams();
-  const [language,setLanguage] = useState("python");
-  const [terminalOpened,setTerminalOpend] = useState(false);
+import { useParams } from "react-router";
+import { X } from "lucide-react";
+import axios from "axios";
+import Terminal from "./Terminal";
+import AppContext from "../../context/Context";
+const Editor = ({ socket, id,closeEditor,code,changeCode,language,changeLanguage }) => {
+  // const [code, setCode] = useState("");
+  const {apiUrl} = useContext(AppContext);
+  const [terminalOpened, setTerminalOpened] = useState(false);
+  const [fileBarOpen, setFileBarOpen] = useState(false);
+  const [compileState, setCompileState] = useState("compiling");
+  const [result, setResult] = useState("");
+  const [errorOccured, setErrorOccured] = useState(false);
+  const handleChangeLanguage = (e) => {
+    const languageChosen = e.target.value;
+    console.log(languageChosen);
+    socket.emit("change-language",{language:languageChosen,id});
+    changeLanguage(languageChosen);
+    if (languageChosen === "java") {
+      console.log("Java chosen");
+      changeCode(
+        "//Create a class with name Temp and then write your code\n" + code
+      );
+    }
+  };
+  const handleRunCode = async () => {
+    setResult("");
+    setErrorOccured(false);
+    setCompileState("compiling");
+    console.log(code);
+    setTerminalOpened(true);
+
+    try {
+      const response = await axios.post(`${apiUrl}/code/run`, {
+        code,
+        language,
+      });
+      setCompileState("compiled");
+      if (response.status == 200) {
+        setErrorOccured(false);
+        setResult(response.data.output);
+      }
+    } catch (e) {
+      setCompileState("compiled");
+
+      setErrorOccured(true);
+      setResult(e.response.data.error);
+      console.log(e.response.data.error);
+    }
+  };
   const options = {
     selectOnLineNumbers: true,
     fontSize: 14,
@@ -16,16 +60,10 @@ const Editor = ({socket}) => {
     },
     automaticLayout: true,
     scrollBeyondLastLine: false,
-  }
-  useEffect(()=>{
-    socket?.on("codeChange",(newCode)=>{
-      console.log("Got code change event");
-      setCode(newCode);
-    });
-    return () => {
-      socket?.off("codeChange");
-    }
-  },[socket]);
+    
+  };
+
+  
   return (
     <div style={{ resize: "horizontal" }}>
       <div
@@ -35,11 +73,23 @@ const Editor = ({socket}) => {
           display: "flex",
           justifyContent: "right",
           padding: "1vh 2vw",
-        }}>
-        <Button style={{ color: "white", backgroundColor: "green" }}>
+          gap: "2vw",
+        }}
+      >
+        <select name="language" id="language" onChange={handleChangeLanguage} value={language}>
+          <option value="python">Python</option>
+          <option value="c">C</option>
+          <option value="java">Java</option>
+          <option value="javascript">JavaScript</option>
+        </select>
+        <Button
+          style={{ color: "white", backgroundColor: "green" }}
+          onClick={handleRunCode}
+        >
           <Play />
           Run
         </Button>
+        <Button onClick={()=>closeEditor()}><X /></Button>
       </div>
       <MonacoEditor
         height="90vh"
@@ -49,19 +99,41 @@ const Editor = ({socket}) => {
         value={code}
         options={options}
         onChange={(newValue) => {
-          setCode(newValue);
-          socket.emit("codeChange", code);
+          changeCode(newValue);
+          socket.emit("codeChange", { code, id });
           console.log("Code change detected");
-        }
-        }
+        }}
       />
 
-        {/* terminal */}
-      {
-        terminalOpened && {
-            
-        }
-      }
+      {/* terminal */}
+      {terminalOpened && (
+        <div
+          style={{
+            width: "40vw",
+            height: "40vh",
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            color: "white",
+            backgroundColor: "black",
+            padding:"2vh"
+          }}
+        >
+          <Button style={{position:"absolute",right:0}} onClick={()=>setTerminalOpened(false)}><X /></Button>
+          {compileState === "compiling" ? (
+            <Typography>Compilation in progress...</Typography>
+          ) : (
+            <div>
+              {errorOccured ? (
+                <Typography>Compilation Failed</Typography>
+              ) : (
+                <Typography>Compilation Successful</Typography>
+              )}
+              <Typography>{result}</Typography>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

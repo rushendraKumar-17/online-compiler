@@ -11,7 +11,7 @@ export const AppProvider = ({ children }) => {
     audio:true,
     video:true
   })
-  const apiUrl = "http://localhost:8000";
+  const apiUrl = "http://192.168.73.64:8000";
   useEffect(() => {
     const token = localStorage.getItem("token");
     if(token){
@@ -27,33 +27,33 @@ export const AppProvider = ({ children }) => {
       })
       .catch((e) => console.log(e));
 
-      // axios.get(`${apiUrl}/api/user/getTeammates`,{
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //   },
-      // }).then((res)=>{
-      //   setTeammates(res.data.teamMates);
-      //   console.log(res); 
-      // }).catch(e=>{
+      axios.get(`${apiUrl}/api/user/getTeammates`,{
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).then((res)=>{
+        setTeammates(res.data.teamMates);
+        console.log("Teammates:",res.data.teamMates); 
+      }).catch(e=>{
 
-      //   console.log(e);
-      // })
+        console.log(e);
+      })
 
-      // axios.get(`${apiUrl}/repo/getSharedRepos`,{
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //   },
-      // }).then((res)=>{
-      //   setSharedRepos(res.data.sharedRepos);
-      //   console.log(res); 
-      // }).catch(e=>{
-      //   console.log(e);
-      // })
+      axios.get(`${apiUrl}/repo/getSharedRepos`,{
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).then((res)=>{
+        setSharedRepos(res.data.sharedRepos);
+        console.log(res); 
+      }).catch(e=>{
+        console.log(e);
+      })
     }
   }, []);
 
   return (
-    <AppContext.Provider value={{ user, setUser, apiUrl,teammates ,sharedRepos,mediaOptions,setMediaOptions}}>
+    <AppContext.Provider value={{ user, setUser, apiUrl,teammates ,sharedRepos,mediaOptions,setMediaOptions,setTeammates}}>
       {children}
     </AppContext.Provider>
   );

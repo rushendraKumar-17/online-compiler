@@ -28,8 +28,24 @@ const rooms = {}; // key: roomId, value: [socketId1, socketId2]
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  socket.on("codeChange")
-  socket.on("join-room", ({ roomId }) => {
+  socket.on("codeChange", ({ code, id }) => {
+    console.log(`Code change in room ${id} by ${socket.id}:`, code);
+    // Emit the code change to all users in the room
+    console.log(rooms);
+    rooms[id].forEach((socketId)=>{
+      if(socketId!=socket.id){
+
+        io.to(socketId).emit("codeChange",code);
+        console.log("Emitted change");
+      }
+    })
+    socket.to(id).emit("codeChange", { code, userId: socket.id });
+  }
+  );
+  
+  socket.on("join-room", ({ id }) => {
+    console.log(id);
+    let roomId = id;
     console.log(`User ${socket.id} joined room ${roomId}`);
 
     if (!rooms[roomId]) {
@@ -39,10 +55,8 @@ io.on("connection", (socket) => {
     rooms[roomId].push(socket.id);
     socket.join(roomId);
 
-    // Notify existing users that a new user joined
     socket.to(roomId).emit("user-joined", { newUserId: socket.id });
 
-    // Send existing users' IDs to the new user
     socket.emit("existing-users", { users: rooms[roomId].filter(id => id !== socket.id) });
   });
 
@@ -51,6 +65,12 @@ io.on("connection", (socket) => {
     io.to(to).emit("offer", { offer, from: socket.id });
   });
 
+  socket.on("nego-needed",({to,offer})=>{
+    io.to(to).emit("nego-needed",{from:socket.id,offer})
+  })
+  socket.on('nego-done',({to,answer})=>{
+    io.to(to).emit("nego-final",{from:to,answer});
+  })
   socket.on("answer", ({ answer, to }) => {
     console.log(`Forwarding answer from ${socket.id} to ${to}`);
     io.to(to).emit("answer", { answer, from: socket.id });
@@ -61,6 +81,14 @@ io.on("connection", (socket) => {
     io.to(to).emit("ice-candidate", { candidate, from: socket.id });
   });
 
+  socket.on("change-language",({language,id})=>{
+    console.log("language",id,language);
+    rooms[id].forEach((userId) => {
+      if (userId !== socket.id) {
+        io.to(userId).emit("change-language", language);
+      }
+    })
+  })
   socket.on("message", (message, time, sender,roomId) => {
     console.log(`Message from ${sender}: ${message} at ${time}`);
     // Emit the message to all users in the room
@@ -97,6 +125,13 @@ app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 
 
+app.get("/meet/:meetId",(req,res)=>{
+  const {meetId} = req.params;
+  console.log(rooms);
+  console.log(meetId);
+  if(rooms[meetId] != undefined) return res.status(200).json({message:"Meeting available"});
+  else return res.status(404).json({message:"Meeting not found"});
+})
 app.get("/",(req,res)=>{
   res.send("Server running...");
 })

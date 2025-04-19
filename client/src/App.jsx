@@ -22,7 +22,7 @@ const App = () => {
         <Route path='/code-editor' element={<CodeEditor/>}/>
         <Route path='/repos/:id' element={<CodeEditor />}/>
         <Route path='/repo/share/code-editor/:id' element={<SharingWindow />}/>
-        <Route path='/meet/' element={<MeetingLandingPage />}/>
+        <Route path='/meet/join/:id' element={<MeetingLandingPage />}/>
         <Route path="/meet/:id" element={<Meeting />} />
         <Route path='/editor' element={<Editor />}/>
       </Routes>

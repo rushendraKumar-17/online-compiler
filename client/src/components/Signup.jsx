@@ -5,6 +5,7 @@ import AppContext from '../context/Context';
 
 const Signup = () => {
     const navigate = useNavigate();
+    const {apiUrl} = useContext(AppContext);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -22,7 +23,7 @@ const Signup = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:8000/api/user/register', formData);
+            const response = await axios.post(`${apiUrl}/api/user/register`, formData);
             if(response.status == 201){
                 setUser(response.data.user);
                 navigate("/home");

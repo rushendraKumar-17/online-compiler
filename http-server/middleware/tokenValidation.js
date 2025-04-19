@@ -10,8 +10,8 @@ const validateToken = async (req, res, next) => {
     // console.log(decoded);
     req.user = decoded;
   } catch (e) {
-    console.log("Error:",e);
-    return res.status(500).json({ message: "Invalid signature" });
+    console.log("Error in token validation:",e);
+    return res.status(400).json({ message: "Invalid signature" });
   }
   next();
 };

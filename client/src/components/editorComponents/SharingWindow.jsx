@@ -8,8 +8,10 @@ import TopBar from "./TopBar";
 import Terminal from "./Terminal";
 import extensionMap from "./extensionMap";
 import {io} from "socket.io-client";
-const socket = io("http://localhost:8000");
+import { useSocket } from "../../context/SocketProvider";
+// const socket = io("http://localhost:8000");
 const SharingWindow = () => {
+  const socket = useSocket();
   const { id } = useParams();
   const [repo, setRepo] = useState(null);
   const [terminal, setTerminal] = useState(false);

@@ -2,12 +2,14 @@ import React, { useContext, useEffect, useRef } from "react";
 import { useState } from "react";
 import { Button, IconButton } from "@mui/material";
 import { Mic, MicOff, Video, VideoOff } from "lucide-react";
-import { useNavigate, Route } from "react-router-dom";
+import { useNavigate, Route, useParams } from "react-router-dom";
 import Meeting from "./Meeting";
 import AppContext from "../../context/Context";
+
 const MeetingLandingPage = () => {
   const { mediaOptions, setMediaOptions } = useContext(AppContext);
   const [userStream, setUserStream] = useState(null);
+  const {id} = useParams();
   const [audio, setAudio] = useState(mediaOptions.audio);
   const [video, setVideo] = useState(mediaOptions.video);
   const manageStream = (a, v) => {
@@ -80,7 +82,7 @@ const MeetingLandingPage = () => {
           <Button
             variant="contained"
             style={{ borderRadius: "3vh", width: "10vw", height: "7vh" }}
-            onClick={()=>navigate("/meet/123")}>
+            onClick={()=>navigate(`/meet/${id}`)}>
             Join now
           </Button>
         </div>

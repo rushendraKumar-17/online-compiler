@@ -2,7 +2,6 @@ import React, { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import axios from "axios";
-import { io } from "socket.io-client";
 import FileBar from "./FileBar";
 import MonacoCodeEditor from "./MonacoCodeEditor";
 import TopBar from "./TopBar";
@@ -10,7 +9,6 @@ import Terminal from "./Terminal";
 import AppContext from "../../context/Context.jsx";
 import ShareWindow from "./ShareWindow";
 import { File, X } from "lucide-react";
-const socket = io("http://localhost:8000");
 const CodeEditor = () => {
   const token = localStorage.getItem("token");
   const extensionMap = {

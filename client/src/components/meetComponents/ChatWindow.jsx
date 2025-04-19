@@ -2,22 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Box, Typography, IconButton, TextField, Button, Divider } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-const ChatWindow = ({ closeChat, socket, roomId }) => {
-  const [messages, setMessages] = useState([]);
+const ChatWindow = ({ closeChat, socket, roomId,messages,addMessage }) => {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef(null);
 
-  useEffect(() => {
-    const handleMessage = (message, time, sender) => {
-      setMessages(prev => [...prev, { message, time, sender }]);
-    };
-
-    socket.on("message", handleMessage);
-
-    return () => {
-      socket.off("message", handleMessage);
-    };
-  }, [socket]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -27,20 +15,22 @@ const ChatWindow = ({ closeChat, socket, roomId }) => {
     e.preventDefault();
     const time = new Date().toLocaleTimeString();
     socket.emit("message", message, time, "Me", roomId);
-    setMessages(prev => [...prev, { message, time, sender: "You" }]);
+    addMessage(  message, time, "You" );
     setMessage("");
   };
 
   return (
     <Box sx={{
-      height: "100%",
+      height: "90vh",
       p: 2,
       border: "1px solid #ccc",
       borderRadius: 2,
       display: 'flex',
       flexDirection: 'column',
       bgcolor: 'background.paper'
-    }}>
+    }}
+    
+    >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h6">In Call Messages</Typography>
         <IconButton onClick={closeChat}>

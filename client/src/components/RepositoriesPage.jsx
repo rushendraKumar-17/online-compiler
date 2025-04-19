@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@mui/material';
 const RepositoriesPage = ({props}) => {
   const {setNewRepoWindow} = props;
-  const { user, apiUrl } = useContext(AppContext);
+  const { user, apiUrl,sharedRepos } = useContext(AppContext);
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const [repos, setRepos] = useState([]);
@@ -30,6 +30,18 @@ const RepositoriesPage = ({props}) => {
           {repos.length > 0 ? (
             <div>
               {repos.map((repo) => (
+                <Button variant='outlined' key={repo._id} onClick={() => navigate(`/repos/${repo._id}`)} className='border border-gray-900'>
+                  {repo.name}
+                </Button>
+              ))}
+            </div>
+          ) : (
+            <div>No repositories available</div>
+          )}
+           Shared Repositories:
+          {sharedRepos.length > 0 ? (
+            <div>
+              {sharedRepos.map((repo) => (
                 <Button variant='outlined' key={repo._id} onClick={() => navigate(`/repos/${repo._id}`)} className='border border-gray-900'>
                   {repo.name}
                 </Button>

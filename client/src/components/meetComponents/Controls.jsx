@@ -1,7 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 import React from "react";
-import { Popper,Paper,Typography } from "@mui/material";
-import { Mic, MicOff, Video, VideoOff, Unplug, EllipsisVertical } from "lucide-react";
 import { Popper, Paper, Typography, Button } from "@mui/material";
 import {
   Mic,
@@ -12,7 +10,7 @@ import {
   EllipsisVertical,
 } from "lucide-react";
 const Controls = (props) => {
-  const { openChatWindow } = props;
+  const { openChatWindow,openEditor } = props;
   const manageStream = props.manageStream;
   const disconnectCall = props.disconnectCall;
   const [video, setVideo] = useState(true);
@@ -38,7 +36,7 @@ const Controls = (props) => {
         onClick={() => setAudio(!audio)}
         style={{
           borderRadius: "4vh",
-          width:"3.5vw",
+          width:"2vw",
           height:"4vw",
           backgroundColor: audio ? "transparent" : "red",
         }}>
@@ -50,7 +48,7 @@ const Controls = (props) => {
         style={{
           borderRadius: "2vh",
           backgroundColor: video ? "transparent" : "red",
-          width:"3.5vw",
+          width:"2vw",
           height:"4vw",
         }}>
         {video ? <Video /> : <VideoOff />}
@@ -85,12 +83,14 @@ const Controls = (props) => {
               },
             },
           ]}>
-          <Paper elevation={3} style={{ padding: "10px" }}>
+          <Paper elevation={3} style={{ padding: "10px",display:"flex",flexDirection:"column" }}>
             {/* <Typography>This is a Popper</Typography> */}
-            <button onClick={()=>{
-              console.log("CLicked");
+            <Button onClick={()=>{
               openChatWindow();
-            }}>In-call messages</button>
+            }}>In-call messages</Button>
+            <Button onClick={()=>{
+              openEditor();
+            }}>Code Editor</Button>
           </Paper>
         </Popper>
       )}
