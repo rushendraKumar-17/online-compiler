@@ -50,7 +50,7 @@ const FileBar = ({ props }) => {
   };
   const handleFileClick = async(file) => {
     handleFileSelection(file);
-    setSelectedFileFn(file);
+    // setSelectedFileFn(file);
   };
 
   const [fileName, setFileName] = useState("");
@@ -58,7 +58,7 @@ const FileBar = ({ props }) => {
   return (
     <div>
       {repo && (
-        <div className="w-[15vw] flex flex-col">
+        <div className="w-[15vw] flex flex-col h-[80vh]">
           <div
             onClick={() => setMainRepo(!mainRepo)}
             className="flex justify-between p-[1vw]">
@@ -72,8 +72,8 @@ const FileBar = ({ props }) => {
               <div
                 key={file._id}
                 onClick={() => handleFileClick(file)}
-                className="border border-gray-100 hover:bg-slate-400 hover:cursor-pointer transition flex items-center">
-                <FileIcons extension={`.${file.type}`} />
+                className={`border hover:bg-slate-400 hover:cursor-pointer transition flex items-center ${selectedFile?.name === file.name ? "bg-slate-600" : ""}`}>
+                <FileIcons extension={`.${file.type}`} /> &nbsp;
                 {file.name}
               </div>
             ))}

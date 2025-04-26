@@ -140,9 +140,10 @@ app.use(express.urlencoded({extended:true}));
 
 
 app.get("/meet/:meetId",(req,res)=>{
+  console.log("Got a request");
   const {meetId} = req.params;
   // console.log(rooms);
-  // console.log(meetId);
+  console.log("Meeting id:",meetId);
   if(rooms[meetId] != undefined) return res.status(200).json({message:"Meeting available"});
   else return res.status(404).json({message:"Meeting not found"});
 })

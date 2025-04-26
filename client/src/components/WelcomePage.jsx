@@ -15,7 +15,7 @@ const WelcomePage = () => {
     const meetingId = e.target.meetingId.value;
     if (meetingId != "") {
       const response = await axios.get(
-        `apiUrl/meet/${meetingId}`
+        `${apiUrl}/meet/${meetingId}`
       );
       console.log(response);
       if (response.status == 200) {

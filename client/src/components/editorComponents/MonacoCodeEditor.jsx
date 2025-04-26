@@ -4,11 +4,12 @@ const CodeEditor = ({props}) => {
   const {selectedFileContent,language,width,handleCodeChange} = props;
   const options = {
     selectOnLineNumbers: true,
+    
   };
 
   return (
     <MonacoEditor
-      height="80vh"
+      height="86vh"
       width={width}
       language={language}
       theme="vs-dark"

@@ -36,9 +36,7 @@ const CodeEditor = () => {
   const handleKeyDown = (event) => {
     if (event.ctrlKey && event.key === "s") {
       event.preventDefault();
-      console.log(selectedFileContent);
-      console.log(selectedFile);
-      console.log(selectedFile._id);
+      // console.log(selectedFile._id);
       axios
         .post(`${apiUrl}/code/save/${selectedFile._id}`, {
           code: selectedFileContent,
@@ -51,14 +49,30 @@ const CodeEditor = () => {
           console.log(res);
         })
         .catch((e) => console.log(e));
+        repo.forEach((file)=>{
+          console.log(file.name)
+          if(file.name === selectedFile.name){
+            console.log("Here")
+            file.content = selectedFileContent;
+          }
+        })
       console.log("Saving the code");
     }
   };
   const handleCodeChange = (e)=>{
  
     console.log(selectedFileContent);
-    setSelectedFileContent(e);
     console.log(e);
+    console.log(repo);
+    setRepo(repo.map(file=>{
+      if(file.name === selectedFile.name){
+        file.content = e;
+        
+      }
+      return file;
+    }))
+    setSelectedFileContent(e);
+    console.log(selectedFileContent)
     // socket.emit("code-change",{selectedFile,selectedFileContent});
   }
   useEffect(() => {
@@ -136,7 +150,7 @@ const CodeEditor = () => {
       <TopBar props = {{handleRun,toggleShareWindow,enableShare}}/>
       <div className="flex border border-black bg-black text-white">
         <div
-          className={`h-[96vh] w-[3vw] bg-gray-700 transition-all duration-300`}>
+          className={`h-[86vh] w-[3vw] bg-gray-700 transition-all duration-300`}>
           <div
             className="cursor-pointer p-2 bg-gray-600 hover:bg-gray-500"
             onClick={() => {
@@ -163,7 +177,7 @@ const CodeEditor = () => {
           />
         )}
         <div
-          className={`h-[96vh] ${
+          className={`h-[86vh] ${
             fileBar ? "w-[85vw]" : "w-[95vw]"
           } bg-gray-800`}>
           {selectedFile ? (

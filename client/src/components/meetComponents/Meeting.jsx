@@ -10,22 +10,24 @@ import { Button } from "@mui/material";
 // import Options from "./Options.jsx";
 const App = () => {
   const socket = useSocket();
+  const remoteStreamRef = useRef(new MediaStream());
   const sharingScreenRef = useRef();
   const [messages, setMessages] = useState([]);
   const navigate = useNavigate();
   const { id } = useParams();
-  const [screenShareStream,setScreenShareStream] = useState(null);
+  const [screenShareStream, setScreenShareStream] = useState(null);
   const { mediaOptions, setMediaOptions, user } = useContext(AppContext);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  const [video, setVideo] = useState(mediaOptions.video);
-  const [audio, setAudio] = useState(mediaOptions.audio);
+  const [video, setVideo] = useState(true);
+  const [audio, setAudio] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [remoteUserSocket, setRemoteUserSocket] = useState(null);
-  const [remoteUserName,setRemoteUserName] = useState(null);
+  const [remoteUserName, setRemoteUserName] = useState(null);
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("python");
+  const [userJoined, setUserJoined] = useState(false);
   const changeCode = (c) => {
     setCode(c);
   };
@@ -52,6 +54,7 @@ const App = () => {
 
   const joinMeet = () => {
     socket.emit("join-room", { id, name: user.name });
+    setUserJoined(true);
     console.log("Joining room");
   };
   useEffect(() => {
@@ -60,7 +63,6 @@ const App = () => {
       return;
     }
     getStream();
-    joinMeet();
     if (socket) {
       socket.on("codeChange", handleCodeChangeEvent);
       socket.on("change-language", handleLanguageChangeEvent);
@@ -123,26 +125,45 @@ const App = () => {
     socket.emit("nego-needed", { offer, to: remoteUserSocket });
   }, []);
   const handleTrackEvent = (e) => {
-    console.log("I am getting stream", e);
+    // console.log("I am getting stream", e);
     const stream = e.streams;
-    console.log("Remote Stream", stream[0]);
+    console.log("Remote Stream track", e.track);
+
     setRemoteStream(stream[0]);
-    if (!remoteVideoRef.current.srcObject) {
-      console.log("Setting srcObject");
-      remoteVideoRef.current.srcObject = stream[0];
+    remoteStreamRef.current.addTrack(e.track);
+    if (remoteStreamRef) console.log("Setting srcObject");
+    if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
+      remoteVideoRef.current.srcObject = remoteStreamRef.current;
     }
   };
-  const handleShareScreen = async()=>{
-    if(!screenShareStream){
-
-      const screen = await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
+  const handleShareScreen = async () => {
+    if (!screenShareStream) {
+      const screen = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false,
+      });
       setScreenShareStream(screen);
+      console.log("Sharing screen");
       sharingScreenRef.current.srcObject = screen;
-    }
-    else{
+      screen.getTracks().forEach((track) => {
+        peer.peer.addTrack(track);
+      });
+      screen.getVideoTracks()[0].onended = () => {
+        stopSharingScreen();
+      };
+    } else {
       //to be done to stop sharing screen
     }
-  }
+  };
+  const stopSharingScreen = async () => {
+    if (screenShareStream) {
+      screenShareStream.getTracks().forEach((track) => track.stop());
+      setScreenShareStream(null);
+
+      console.log("Stopped screen sharing");
+      // Optionally you can renegotiate or remove tracks from peer
+    }
+  };
   const disconnectCall = () => {
     // Close all peer connections
 
@@ -175,7 +196,7 @@ const App = () => {
     //   }
     // }
   }, []);
-  const handleUserJoined = useCallback(async ({ newUserId ,name}) => {
+  const handleUserJoined = useCallback(async ({ newUserId, name }) => {
     console.log("User joined:", newUserId);
     setRemoteUserSocket(newUserId);
     setRemoteUserName(name);
@@ -196,6 +217,7 @@ const App = () => {
   const manageStream = (a, v) => {
     setVideo(v);
     setAudio(a);
+    console.log(v,a)
     setMediaOptions({ video: v, audio: a });
     if (userStream) {
       userStream.getAudioTracks().forEach((track) => (track.enabled = a));
@@ -211,17 +233,22 @@ const App = () => {
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video,
+        video: true,
         audio,
       });
 
       setUserStream(stream);
+
       console.log("My stream", stream);
-      // sendStream(stream);
-      for (const track of stream.getTracks()) {
-        console.log("sending tracks");
-        peer.peer.addTrack(track, stream);
+      if (peer.peer.getSenders().length === 0) {
+        for (const track of stream.getTracks()) {
+          console.log("sending tracks", track);
+          peer.peer.addTrack(track, stream);
+        }
+      } else {
+        console.log("Tracks already added...");
       }
+      // sendStream(stream);
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
       }
@@ -240,7 +267,7 @@ const App = () => {
       }}
     >
       <div>
-        {/* <Button onClick={() => joinMeet()}>Start</Button> */}
+        {!userJoined && <Button onClick={() => joinMeet()}>Start</Button>}
         {editorOpen && (
           <Editor
             socket={socket}
@@ -257,8 +284,9 @@ const App = () => {
         style={{
           width: chatOpen ? (editorOpen ? "40vw" : "80vw") : "100vw",
           padding: "3vh",
-          height:"80vh",
-          overflowX:"scroll"
+          height: "80vh",
+          overflowX: "hidden",
+          overflowY: "scroll",
         }}
       >
         <div style={{ width: "30vw", height: "40vh", position: "relative" }}>
@@ -286,41 +314,50 @@ const App = () => {
             Me
           </p>
         </div>
-        {/* <div
-          id="remote-videos"
-          style={{ display: "flex", flexWrap: "wrap", overflow: "hidden" }}
-        ></div> */}
-         
-          <div style={{ width: "30vw", height: "40vh", position: "relative" }}>
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              muted
-              playsInline
-              style={{
-                width: "100%",
+        
+
+        <div
+          style={{
+            width: "30vw",
+            height: "40vh",
+            position: "relative",
+            border: "1px solid black",
+          }}
+        >
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            muted
+            playsInline
+            style={{
+              width: "100%",
               height: "100%",
               objectFit: "cover",
               borderRadius: "3vh",
-              }}
-            ></video>
-            <p
-              style={{
-                position: "absolute",
-                bottom: "2vh",
-                left: "2vh",
-                zIndex: 100,
-                color: "white",
-              }}
-            >
-              {remoteUserName}
-            </p>
-          </div>
-            <video autoPlay playsInline ref={sharingScreenRef}  style={{
-                width: "10vw",
-              height: "10vw",
-              borderRadius: "3vh",
-              }}></video>
+            }}
+          ></video>
+          <p
+            style={{
+              position: "absolute",
+              bottom: "2vh",
+              left: "2vh",
+              zIndex: 100,
+              color: "white",
+            }}
+          >
+            {remoteUserName}
+          </p>
+        </div>
+        <video
+          autoPlay
+          playsInline
+          ref={sharingScreenRef}
+          style={{
+            width: "10vw",
+            height: "10vw",
+            borderRadius: "3vh",
+          }}
+        ></video>
       </div>
       <div>
         {chatOpen && (
