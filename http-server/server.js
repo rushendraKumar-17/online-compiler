@@ -28,10 +28,15 @@ const rooms = {}; // key: roomId, value: [socketId1, socketId2]
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
+  socket.on("create-room",({id})=>{
+    console.log(id);
+    rooms[id] = [];
+    rooms[id].push(socket.id);
+  })
   socket.on("codeChange", ({ code, id }) => {
     console.log(`Code change in room ${id} by ${socket.id}:`, code);
     // Emit the code change to all users in the room
-    console.log(rooms);
+    // console.log(rooms);
     rooms[id].forEach((socketId)=>{
       if(socketId!=socket.id){
 
@@ -43,21 +48,29 @@ io.on("connection", (socket) => {
   }
   );
   
-  socket.on("join-room", ({ id }) => {
-    console.log(id);
+  socket.on("join-room", ({ id,name }) => {
+    console.log("Logging name",id,name);
     let roomId = id;
+    console.log(rooms[roomId]);
     console.log(`User ${socket.id} joined room ${roomId}`);
 
     if (!rooms[roomId]) {
       rooms[roomId] = [];
     }
-    
     rooms[roomId].push(socket.id);
     socket.join(roomId);
 
-    socket.to(roomId).emit("user-joined", { newUserId: socket.id });
+    rooms[id].forEach((socketId)=>{
+      if(socketId!=socket.id){
 
-    socket.emit("existing-users", { users: rooms[roomId].filter(id => id !== socket.id) });
+        io.to(socketId).emit("user-joined",{newUserId:socket.id,name});
+        console.log("Emitted user joined event");
+      }
+    })
+
+    // socket.to(roomId).emit("user-joined", { newUserId: socket.id });
+
+    // socket.emit("existing-users", { users: rooms[roomId].filter(id => id !== socket.id) });
   });
 
   socket.on("offer", ({ offer, to }) => {
@@ -92,7 +105,8 @@ io.on("connection", (socket) => {
   socket.on("message", (message, time, sender,roomId) => {
     console.log(`Message from ${sender}: ${message} at ${time}`);
     // Emit the message to all users in the room
-    console.log(rooms[roomId]);
+    console.log(roomId);
+    console.log(rooms);
     rooms[roomId].forEach((userId) => {
       if (userId !== socket.id) {
         io.to(userId).emit("message", message, time, sender);
@@ -127,8 +141,8 @@ app.use(express.urlencoded({extended:true}));
 
 app.get("/meet/:meetId",(req,res)=>{
   const {meetId} = req.params;
-  console.log(rooms);
-  console.log(meetId);
+  // console.log(rooms);
+  // console.log(meetId);
   if(rooms[meetId] != undefined) return res.status(200).json({message:"Meeting available"});
   else return res.status(404).json({message:"Meeting not found"});
 })

@@ -25,9 +25,10 @@ const WelcomePage = () => {
       }
     }
   };
-  const handleStartMeeting = () => {
+  const handleStartMeeting = async() => {
     const meetingId = nanoid(3) + "-" + nanoid(4) + "-" + nanoid(3);
     console.log(meetingId);
+    await navigator.clipboard.writeText(meetingId);
     console.log("Trying to start a meeting");
     navigate(`/meet/${meetingId}?isInitiator=true`);
   };

@@ -11,7 +11,7 @@ export const AppProvider = ({ children }) => {
     audio:true,
     video:true
   })
-  const apiUrl = "http://192.168.73.64:8000";
+  const apiUrl = "http://localhost:8000";
   useEffect(() => {
     const token = localStorage.getItem("token");
     if(token){

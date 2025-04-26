@@ -3,24 +3,27 @@ import Controls from "./Controls";
 import AppContext from "../../context/Context";
 import ChatWindow from "./ChatWindow";
 import Editor from "./Editor.jsx";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import peer from "../services/PeerService.jsx";
 import { useSocket } from "../../context/SocketProvider.jsx";
 import { Button } from "@mui/material";
 // import Options from "./Options.jsx";
 const App = () => {
   const socket = useSocket();
+  const sharingScreenRef = useRef();
   const [messages, setMessages] = useState([]);
-
+  const navigate = useNavigate();
   const { id } = useParams();
-  const { mediaOptions, setMediaOptions } = useContext(AppContext);
+  const [screenShareStream,setScreenShareStream] = useState(null);
+  const { mediaOptions, setMediaOptions, user } = useContext(AppContext);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  const [video, setVideo] = useState(true);
-  const [audio, setAudio] = useState(true);
+  const [video, setVideo] = useState(mediaOptions.video);
+  const [audio, setAudio] = useState(mediaOptions.audio);
   const [chatOpen, setChatOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [remoteUserSocket, setRemoteUserSocket] = useState(null);
+  const [remoteUserName,setRemoteUserName] = useState(null);
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("python");
   const changeCode = (c) => {
@@ -48,11 +51,16 @@ const App = () => {
   const [remoteStream, setRemoteStream] = useState(null);
 
   const joinMeet = () => {
-    socket.emit("join-room", { id });
+    socket.emit("join-room", { id, name: user.name });
     console.log("Joining room");
   };
   useEffect(() => {
+    if (!user) {
+      navigate("/");
+      return;
+    }
     getStream();
+    joinMeet();
     if (socket) {
       socket.on("codeChange", handleCodeChangeEvent);
       socket.on("change-language", handleLanguageChangeEvent);
@@ -60,7 +68,7 @@ const App = () => {
     }
     return () => {
       socket.off("codeChange", handleCodeChangeEvent);
-      socket.on("change-language", handleLanguageChangeEvent);
+      socket.off("change-language", handleLanguageChangeEvent);
       socket.off("message", addMessage);
     };
   }, [socket]);
@@ -124,6 +132,17 @@ const App = () => {
       remoteVideoRef.current.srcObject = stream[0];
     }
   };
+  const handleShareScreen = async()=>{
+    if(!screenShareStream){
+
+      const screen = await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
+      setScreenShareStream(screen);
+      sharingScreenRef.current.srcObject = screen;
+    }
+    else{
+      //to be done to stop sharing screen
+    }
+  }
   const disconnectCall = () => {
     // Close all peer connections
 
@@ -149,16 +168,17 @@ const App = () => {
   const handleAnswer = useCallback(async ({ answer, from }) => {
     console.log("Got answer from ", from);
     await peer.setLocalDescription(answer);
-    if (userStream) {
-      for (const track of userStream.getTracks()) {
-        console.log("sending tracks");
-        peer.peer.addTrack(track, userStream);
-      }
-    }
+    // if (userStream) {
+    //   for (const track of userStream.getTracks()) {
+    //     console.log("sending tracks");
+    //     peer.peer.addTrack(track, userStream);
+    //   }
+    // }
   }, []);
-  const handleUserJoined = useCallback(async ({ newUserId }) => {
+  const handleUserJoined = useCallback(async ({ newUserId ,name}) => {
     console.log("User joined:", newUserId);
     setRemoteUserSocket(newUserId);
+    setRemoteUserName(name);
     const offer = await peer.getOffer();
     console.log("Created offer", offer);
     socket.emit("offer", { offer, to: newUserId });
@@ -191,8 +211,8 @@ const App = () => {
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
+        video,
+        audio,
       });
 
       setUserStream(stream);
@@ -220,7 +240,7 @@ const App = () => {
       }}
     >
       <div>
-        <Button onClick={() => joinMeet()}>Start</Button>
+        {/* <Button onClick={() => joinMeet()}>Start</Button> */}
         {editorOpen && (
           <Editor
             socket={socket}
@@ -237,7 +257,8 @@ const App = () => {
         style={{
           width: chatOpen ? (editorOpen ? "40vw" : "80vw") : "100vw",
           padding: "3vh",
-          overflowX: "hidden",
+          height:"80vh",
+          overflowX:"scroll"
         }}
       >
         <div style={{ width: "30vw", height: "40vh", position: "relative" }}>
@@ -265,33 +286,41 @@ const App = () => {
             Me
           </p>
         </div>
-        <div
+        {/* <div
           id="remote-videos"
           style={{ display: "flex", flexWrap: "wrap", overflow: "hidden" }}
-        ></div>
-        <div style={{ width: "30vw", height: "40vh", position: "relative" }}>
-          <video
-            ref={remoteVideoRef}
-            autoPlay
-            muted
-            playsInline
-            style={{
-              width: "30vw",
-              height: "20vw",
-            }}
-          ></video>
-          <p
-            style={{
-              position: "absolute",
-              bottom: "2vh",
-              left: "2vh",
-              zIndex: 100,
-              color: "white",
-            }}
-          >
-            You
-          </p>
-        </div>
+        ></div> */}
+         
+          <div style={{ width: "30vw", height: "40vh", position: "relative" }}>
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              muted
+              playsInline
+              style={{
+                width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              borderRadius: "3vh",
+              }}
+            ></video>
+            <p
+              style={{
+                position: "absolute",
+                bottom: "2vh",
+                left: "2vh",
+                zIndex: 100,
+                color: "white",
+              }}
+            >
+              {remoteUserName}
+            </p>
+          </div>
+            <video autoPlay playsInline ref={sharingScreenRef}  style={{
+                width: "10vw",
+              height: "10vw",
+              borderRadius: "3vh",
+              }}></video>
       </div>
       <div>
         {chatOpen && (
@@ -301,6 +330,7 @@ const App = () => {
             roomId={id}
             messages={messages}
             addMessage={addMessage}
+            user={user}
           />
         )}
       </div>
@@ -309,6 +339,7 @@ const App = () => {
         disconnectCall={disconnectCall}
         openChatWindow={openChat}
         openEditor={openEditor}
+        handleShareScreen={handleShareScreen}
       />
     </div>
   );

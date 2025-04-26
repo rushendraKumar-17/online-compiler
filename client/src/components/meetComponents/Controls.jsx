@@ -8,9 +8,11 @@ import {
   VideoOff,
   Unplug,
   EllipsisVertical,
+  MonitorUp,
+  MonitorX,
 } from "lucide-react";
 const Controls = (props) => {
-  const { openChatWindow,openEditor } = props;
+  const { openChatWindow, openEditor,handleShareScreen } = props;
   const manageStream = props.manageStream;
   const disconnectCall = props.disconnectCall;
   const [video, setVideo] = useState(true);
@@ -30,16 +32,17 @@ const Controls = (props) => {
         left: "41%",
         display: "flex",
         gap: "1.4vw",
-   
-      }}>
+      }}
+    >
       <Button
         onClick={() => setAudio(!audio)}
         style={{
           borderRadius: "4vh",
-          width:"2vw",
-          height:"4vw",
+          width: "2vw",
+          height: "4vw",
           backgroundColor: audio ? "transparent" : "red",
-        }}>
+        }}
+      >
         {audio ? <Mic /> : <MicOff />}
       </Button>
       <Button
@@ -48,27 +51,47 @@ const Controls = (props) => {
         style={{
           borderRadius: "2vh",
           backgroundColor: video ? "transparent" : "red",
-          width:"2vw",
-          height:"4vw",
-        }}>
+          width: "2vw",
+          height: "4vw",
+        }}
+      >
         {video ? <Video /> : <VideoOff />}
       </Button>
       <Button
+        style={{
+          borderRadius: "2vh",
+          width: "2vw",
+          height: "4vw",
+        }}
+        onClick={handleShareScreen}
+      >
+        <MonitorUp/>
+      </Button>
+      <Button
         onClick={disconnectCall}
-        style={{ backgroundColor: "red", borderRadius: "3vh",width:"3.5vw",
-          height:"4vw", }}>
+        style={{
+          backgroundColor: "red",
+          borderRadius: "3vh",
+          width: "3.5vw",
+          height: "4vw",
+        }}
+      >
         <Unplug />
       </Button>
-      <button ref={anchorRef} onClick={() => setOptionsWindow(!optionsWindow)} style={{
-        borderRadius:"5vh",
-        width:"4vw",
-        display:"flex",
-        justifyContent:"center",
-        alignItems:"center",
-        backgroundColor: optionsWindow ? "grey" : "transparent"
-      }}>
+      <Button
+        ref={anchorRef}
+        onClick={() => setOptionsWindow(!optionsWindow)}
+        style={{
+          borderRadius: "5vh",
+          width: "4vw",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: optionsWindow ? "grey" : "transparent",
+        }}
+      >
         <EllipsisVertical />
-      </button>
+      </Button>
       {optionsWindow && (
         <Popper
           open={true}
@@ -82,15 +105,33 @@ const Controls = (props) => {
                 offset: [0, 10], // moves it slightly away from the button
               },
             },
-          ]}>
-          <Paper elevation={3} style={{ padding: "10px",display:"flex",flexDirection:"column" }}>
+          ]}
+        >
+          <Paper
+            elevation={3}
+            style={{
+              padding: "10px",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             {/* <Typography>This is a Popper</Typography> */}
-            <Button onClick={()=>{
-              openChatWindow();
-            }}>In-call messages</Button>
-            <Button onClick={()=>{
-              openEditor();
-            }}>Code Editor</Button>
+            <Button
+              onClick={() => {
+                openChatWindow();
+                setOptionsWindow(false);
+              }}
+            >
+              In-call messages
+            </Button>
+            <Button
+              onClick={() => {
+                openEditor();
+                setOptionsWindow(false);
+              }}
+            >
+              Code Editor
+            </Button>
           </Paper>
         </Popper>
       )}

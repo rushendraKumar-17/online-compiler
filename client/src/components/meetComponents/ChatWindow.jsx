@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Typography, IconButton, TextField, Button, Divider } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { User } from 'lucide-react';
 
-const ChatWindow = ({ closeChat, socket, roomId,messages,addMessage }) => {
+const ChatWindow = ({ closeChat, socket, roomId,messages,addMessage,user }) => {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef(null);
 
@@ -14,7 +15,7 @@ const ChatWindow = ({ closeChat, socket, roomId,messages,addMessage }) => {
   const handleSendMessage = (e) => {
     e.preventDefault();
     const time = new Date().toLocaleTimeString();
-    socket.emit("message", message, time, "Me", roomId);
+    socket.emit("message", message, time, user.name, roomId);
     addMessage(  message, time, "You" );
     setMessage("");
   };

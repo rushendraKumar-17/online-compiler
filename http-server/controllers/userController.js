@@ -82,7 +82,7 @@ const getUser = async(req,res)=>{
 const getTeammates = async(req,res)=>{
     const user = await userModel.findOne({email:req.user.email});
     const teamMatesId = user.teammates;
-    console.log(user.teammates);
+    // console.log(user.teammates);
     // const teamMates = await Promise.all(teamMatesId.map(async(id)=>{
     //     const user = await userModel.findById(id);
     //     return {name:user.name,email:user.email};
@@ -103,10 +103,10 @@ const acceptInvite = async(req,res)=>{
 ;    requestedUser.teammates.forEach(teammate=>{
         if(teammate.email === email){
             teammate.isAccepted = true;
-            console.log(teammate);
+            // console.log(teammate);
         }
     });
-    console.log(user);
+    // console.log(user);
     requestedUser.save();
     user.invitations = user.invitations.filter(invite=>invite!==email);
     requestedUser.teammates.push({
@@ -116,7 +116,7 @@ const acceptInvite = async(req,res)=>{
         isAccepted:true
     })
     user.save();
-    console.log(user.invitations);
+    // console.log(user.invitations);
     return res.status(200).json({message:"Invite accepted"});
 }
 
