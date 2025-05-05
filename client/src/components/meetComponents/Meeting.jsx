@@ -19,8 +19,8 @@ const App = () => {
   const { mediaOptions, setMediaOptions, user } = useContext(AppContext);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  const [video, setVideo] = useState(true);
-  const [audio, setAudio] = useState(true);
+  const [video, setVideo] = useState(mediaOptions.video);
+  const [audio, setAudio] = useState(mediaOptions.audio);
   const [chatOpen, setChatOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [remoteUserSocket, setRemoteUserSocket] = useState(null);
@@ -125,7 +125,7 @@ const App = () => {
     socket.emit("nego-needed", { offer, to: remoteUserSocket });
   }, []);
   const handleTrackEvent = (e) => {
-    // console.log("I am getting stream", e);
+    console.log("I am getting stream", e);
     const stream = e.streams;
     console.log("Remote Stream track", e.track);
 
@@ -133,6 +133,8 @@ const App = () => {
     remoteStreamRef.current.addTrack(e.track);
     if (remoteStreamRef) console.log("Setting srcObject");
     if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
+      console.log("Setting srcObject to remote stream");
+      remoteVideoRef.current.srcObject = null;
       remoteVideoRef.current.srcObject = remoteStreamRef.current;
     }
   };
@@ -202,10 +204,11 @@ const App = () => {
     setRemoteUserName(name);
     const offer = await peer.getOffer();
     console.log("Created offer", offer);
-    socket.emit("offer", { offer, to: newUserId });
+    socket.emit("offer", { offer, to: newUserId, name: user.name });
   }, []);
-  const handleOffer = useCallback(async ({ offer, from }) => {
+  const handleOffer = useCallback(async ({ offer, from, name }) => {
     console.log("Offer from ", from, offer);
+    setRemoteUserName(name);
     setRemoteUserSocket(from);
 
     const ans = await peer.getAnswer(offer);
@@ -215,15 +218,61 @@ const App = () => {
 
   // Manage user media stream settings
   const manageStream = (a, v) => {
+    const videoToggled = v !== video;
+    const audioToggled = a !== audio;
+
+    // Update state
     setVideo(v);
     setAudio(a);
-    console.log(v,a)
     setMediaOptions({ video: v, audio: a });
+
+    console.log(v, a);
+
     if (userStream) {
-      userStream.getAudioTracks().forEach((track) => (track.enabled = a));
-      userStream.getVideoTracks().forEach((track) => (track.enabled = v));
+        // Handle audio tracks
+        if (userStream.getAudioTracks().length > 0) {
+            userStream.getAudioTracks().forEach((track) => (track.enabled = a));
+        }
+
+        // Handle video tracks
+        if (userStream.getVideoTracks().length > 0) {
+            userStream.getVideoTracks().forEach((track) => (track.enabled = v));
+        }
+
+        if(localVideoRef.current) {
+            localVideoRef.current.srcObject = userStream;
+        }
+        // Only replace the track if toggled
+        if (videoToggled || audioToggled) {
+            peer.peer.getSenders().forEach((sender) => {
+                console.log("Sender track", sender.track);
+                console.log("Sender track kind", sender.track.kind);
+
+                if (sender.track.kind === "video" && videoToggled) {
+                    // Replace video track if it's toggled
+                    console.log("Replacing video track", userStream.getVideoTracks()[0]);
+                    if (userStream.getVideoTracks().length > 0) {
+                      const newVideoTrack = userStream.getVideoTracks()[0];
+                        sender.replaceTrack(newVideoTrack);
+                        if(localVideoRef.current && newVideoTrack) {
+                          localVideoRef.current.srcObject = userStream;
+                      }
+                      }
+                      
+
+                }
+
+                if (sender.track.kind === "audio" && audioToggled) {
+                    // Replace audio track if it's toggled
+                    if (userStream.getAudioTracks().length > 0) {
+                        sender.replaceTrack(userStream.getAudioTracks()[0]);
+                    }
+                }
+            });
+        }
     }
-  };
+};
+
 
   // Get user's media stream
   const getStream = async () => {
@@ -231,27 +280,31 @@ const App = () => {
       if (userStream) {
         userStream.getTracks().forEach((track) => track.stop());
       }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio,
-      });
-
-      setUserStream(stream);
-
-      console.log("My stream", stream);
-      if (peer.peer.getSenders().length === 0) {
-        for (const track of stream.getTracks()) {
-          console.log("sending tracks", track);
-          peer.peer.addTrack(track, stream);
+      let stream = null;
+      if (video || audio) {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video,
+          audio,
+        });
+        console.log("My stream", stream);
+        if (peer.peer.getSenders().length === 0) {
+          for (const track of stream.getTracks()) {
+            console.log("sending tracks", track);
+            peer.peer.addTrack(track, stream);
+          }
+        } else {
+          console.log("Tracks already added...");
+        }
+        // sendStream(stream);
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
         }
       } else {
-        console.log("Tracks already added...");
+        setUserStream(null);
       }
-      // sendStream(stream);
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
+
+      setUserStream(stream);
+      joinMeet();
     } catch (error) {
       console.error("Error accessing media devices:", error);
     }
@@ -267,7 +320,7 @@ const App = () => {
       }}
     >
       <div>
-        {!userJoined && <Button onClick={() => joinMeet()}>Start</Button>}
+        {/* {!userJoined && <Button onClick={() => joinMeet()}>Start</Button>} */}
         {editorOpen && (
           <Editor
             socket={socket}
@@ -290,40 +343,75 @@ const App = () => {
         }}
       >
         <div style={{ width: "30vw", height: "40vh", position: "relative" }}>
-          <video
-            ref={localVideoRef}
-            autoPlay
-            muted
-            playsInline
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              borderRadius: "3vh",
-            }}
-          />
-          <p
-            style={{
-              position: "absolute",
-              bottom: "2vh",
-              left: "2vh",
-              zIndex: 100,
-              color: "white",
-            }}
-          >
-            Me
-          </p>
-        </div>
-        
+  <video
+    ref={localVideoRef}
+    autoPlay
+    muted
+    playsInline
+    style={{
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      borderRadius: "3vh",
+      display: video ? "block" : "none",  // Toggle visibility
+    }}
+    srcObject={video ? userStream : null}  // Only set srcObject if video is enabled
+  />
+  
+  {/* Fallback UI when video is off */}
+  {!video && (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        backgroundColor: "black",
+        borderRadius: "3vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          color: "white",
+          backgroundColor: "green",
+          textTransform: "capitalize",
+          borderRadius: "50%",
+          width: "10vw",
+          height: "10vw",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "5vw",
+        }}
+      >
+        {user.name.charAt(0)}
+      </div>
+    </div>
+  )}
+  
+  <p
+    style={{
+      position: "absolute",
+      bottom: "2vh",
+      left: "2vh",
+      zIndex: 100,
+      color: "white",
+    }}
+  >
+    Me
+  </p>
+</div>
+
 
         <div
           style={{
             width: "30vw",
             height: "40vh",
             position: "relative",
-            border: "1px solid black",
           }}
         >
+         
           <video
             ref={remoteVideoRef}
             autoPlay

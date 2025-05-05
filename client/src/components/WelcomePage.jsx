@@ -38,11 +38,12 @@ const WelcomePage = () => {
       <br />
       <div>
         <form onSubmit={handleJoinMeeting}>
-          <input type="text" placeholder="Enter meeting id" name="meetingId" />{" "}
+          <input type="text" placeholder="Enter meeting id" name="meetingId"  className = "p-[1vh]" style={{border:"1px solid black",borderRadius:"2vh"}}/>{" "}
           <Button type="submit">Join meeting</Button>
         </form>
       </div>
-      <Button onClick={handleStartMeeting}>Start a meeting</Button>
+      <br />
+      <Button onClick={handleStartMeeting} variant="outlined">Start a meeting</Button>
     </div>
   );
 };

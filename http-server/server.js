@@ -17,6 +17,15 @@ connectDb();
 
 const app = express();
 app.use(cors());
+app.use(cors({
+  origin:"*"
+}))
+app.use((req,res,next)=>{
+  res.header("Access-Control-Allow-Origin","*");
+  res.header('Access-Control-Allow-Methods',"GET, POST, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers","Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  next();
+})
 const server =  http.createServer(app);
 const io = new Server(server,{
     cors:{
@@ -73,9 +82,9 @@ io.on("connection", (socket) => {
     // socket.emit("existing-users", { users: rooms[roomId].filter(id => id !== socket.id) });
   });
 
-  socket.on("offer", ({ offer, to }) => {
+  socket.on("offer", ({ offer, to,name }) => {
     console.log(`Forwarding offer from ${socket.id} to ${to}`);
-    io.to(to).emit("offer", { offer, from: socket.id });
+    io.to(to).emit("offer", { offer, from: socket.id,name });
   });
 
   socket.on("nego-needed",({to,offer})=>{
