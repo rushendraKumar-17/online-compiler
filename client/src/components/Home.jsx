@@ -7,6 +7,7 @@ import WelcomePage from "./WelcomePage.jsx";
 import RepositoriesPage from "./RepositoriesPage.jsx";
 import TeammatesPage from "./TeammatesPage.jsx";
 import Invitations from "./Invitations.jsx";
+import ProtectedRoute from './ProtectedRoute.jsx';
 const Home = () => {
   const navigate = useNavigate();
   const { user, apiUrl } = useContext(AppContext);
@@ -38,9 +39,9 @@ const Home = () => {
       <div className='w-full'>
       <Routes>
         <Route path='/' element={<WelcomePage />}/>
-        <Route path='/repos' element={<RepositoriesPage props={{setNewRepoWindow}}/>}/>
-        <Route path='/teammates' element={<TeammatesPage/> }/>
-        <Route path='/invitations' element={<Invitations />} />
+        <Route path='/repos' element={<ProtectedRoute><RepositoriesPage props={{setNewRepoWindow}}/></ProtectedRoute>}/>
+        <Route path='/teammates' element={<ProtectedRoute><TeammatesPage/></ProtectedRoute> }/>
+        <Route path='/invitations' element={<ProtectedRoute><Invitations /></ProtectedRoute>} />
       </Routes>
       </div>
       <Outlet />

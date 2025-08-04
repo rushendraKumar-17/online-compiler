@@ -7,10 +7,21 @@ export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [teammates,setTeammates] = useState([]);
   const [sharedRepos,setSharedRepos] = useState([]);
+  const [repos,setRepos] = useState([]);
+  const [open,setOpen] = useState(false);
+  const [alertMessage,setAlertMessage] = useState("");
+  const [alertType,setAlertType] = useState("success");
   const [mediaOptions,setMediaOptions] = useState({
     audio:true,
     video:true
   })
+  const logout = ()=>{
+    setUser(null);
+    setSharedRepos([]);
+    setTeammates([]);
+    localStorage.removeItem("token");
+    
+  }
   const apiUrl = "http://localhost:8000";
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -53,7 +64,7 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   return (
-    <AppContext.Provider value={{ user, setUser, apiUrl,teammates ,sharedRepos,mediaOptions,setMediaOptions,setTeammates}}>
+    <AppContext.Provider value={{ user, setUser, apiUrl,teammates ,sharedRepos,mediaOptions,setMediaOptions,setTeammates,logout,setSharedRepos,open,setOpen,alertMessage,setAlertMessage,alertType,setAlertType,repos,setRepos}}>
       {children}
     </AppContext.Provider>
   );

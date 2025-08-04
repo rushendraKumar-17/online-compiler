@@ -10,8 +10,7 @@ import cors from "cors";
 import repoRoutes from "./routes/repoRoutes.js";
 import codeRoutes from "./routes/codeRoutes.js";
 import fileRoutes from "./routes/fileRoutes.js";
-import mongoose from 'mongoose';
-
+import sendMail from "./services/mailer.js";
 import userRoutes from "./routes/userRoutes.js"
 connectDb();
 
@@ -158,6 +157,10 @@ app.get("/meet/:meetId",(req,res)=>{
 })
 app.get("/",(req,res)=>{
   res.send("Server running...");
+})
+app.get("/test-mail",async(req,res)=>{
+  const response =await sendMail("rushendra0123@gmail.com","Test","Testing nodemailer");
+  return res.status(200).send(response);
 })
 
 app.use("/repo",repoRoutes);

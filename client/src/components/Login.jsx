@@ -9,6 +9,8 @@ const Login = () => {
     email: "",
     password: "",
   });
+  const {setAlertMessage,setAlertType,setOpen} = useContext(AppContext);
+
   const navigate = useNavigate();
   const {setUser,apiUrl} = useContext(AppContext);
   const handleChange = (e) => {
@@ -28,11 +30,16 @@ const Login = () => {
       if(token){
         localStorage.setItem('token',token);
         setUser(user);
+        setAlertType("success");
+        setAlertMessage("Login successful")
         navigate("/home");
       }
       // Handle successful login here
     } catch (error) {
       console.error("There was an error logging in!", error);
+      setAlertType("error");
+
+      setAlertMessage(error.response.data.message);
       // Handle login error here
     }
   };

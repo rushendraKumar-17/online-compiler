@@ -5,13 +5,13 @@ import AppContext from '../context/Context';
 
 const Signup = () => {
     const navigate = useNavigate();
+    const {setAlertMessage,setAlertType,setOpen} = useContext(AppContext);
     const {apiUrl} = useContext(AppContext);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         password: ''
     });
-    const {user,setUser} = useContext(AppContext);
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({
@@ -25,14 +25,17 @@ const Signup = () => {
         try {
             const response = await axios.post(`${apiUrl}/api/user/register`, formData);
             if(response.status == 201){
-                setUser(response.data.user);
-                navigate("/home");
+                // navigate(`/verify-email?email=${formData.email}`);
+                navigate("/login");
             }else{
-                alert("Error in signing up");
+                setAlertType("error");
+                setAlertMessage("Error in signing up");
                 console.log(response);
             }
         } catch (error) {
             console.error(error);
+            setAlertType("error");
+            setAlertMessage(error.response.data.message);
         }
     };
 

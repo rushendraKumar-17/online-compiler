@@ -1,8 +1,18 @@
 import React, { useContext, useState } from "react";
 import axios from "axios";
 import FileIcons from "./FileIcons";
-import { Button } from "@mui/material";
+import {
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Typography,
+  Box,
+} from "@mui/material";
 import AppContext from "../../context/Context";
+
 const FileBar = ({ props }) => {
   const {
     selectedFile,
@@ -17,19 +27,24 @@ const FileBar = ({ props }) => {
   } = props;
 
   const [mainRepo, setMainRepo] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const [newFileWindow, setNewFileWindow] = useState(false);
+
   const { apiUrl } = useContext(AppContext);
   const token = localStorage.getItem("token");
+
   const handleAddFile = (e) => {
     e.stopPropagation();
     setNewFileWindow(true);
-    console.log("Adding file");
   };
+
   const addFile = async () => {
-    const file = fileName.split(".");
+    const file = fileName.trim().split(".");
     const fileExtension = file[file.length - 1];
-    console.log(fileExtension);
-    axios
-      .post(
+    if (!fileName.trim() || !fileExtension) return;
+
+    try {
+      const res = await axios.post(
         `${apiUrl}/file/new`,
         { name: fileName, parent: id, type: fileExtension },
         {
@@ -37,64 +52,80 @@ const FileBar = ({ props }) => {
             Authorization: `Bearer ${token}`,
           },
         }
-      )
-      .then((res) => {
-        console.log(res);
-        if (res.status === 200) {
-          fetchRepo();
-        }
-      })
-      .catch((e) => console.log(e));
+      );
+
+      if (res.status === 200) {
+        fetchRepo();
+      }
+    } catch (e) {
+      console.error("Error creating file:", e);
+    }
+
     setNewFileWindow(false);
     setFileName("");
   };
-  const handleFileClick = async(file) => {
+
+  const handleFileClick = async (file) => {
     handleFileSelection(file);
-    // setSelectedFileFn(file);
   };
 
-  const [fileName, setFileName] = useState("");
-  const [newFileWindow, setNewFileWindow] = useState(false);
   return (
     <div>
       {repo && (
-        <div className="w-[15vw] flex flex-col h-[80vh]">
-          <div
+        <Box className="w-[15vw] flex flex-col h-[80vh] overflow-y-auto">
+          <Box
             onClick={() => setMainRepo(!mainRepo)}
-            className="flex justify-between p-[1vw]">
-            <div>{repo.name}</div>
-            <Button variant="primary" onClick={handleAddFile} className="border">
-              Add file
+            className="flex justify-between items-center p-[1vw] bg-gray-100 dark:bg-gray-800"
+          >
+            <Typography variant="subtitle1" fontWeight={600}>
+              {repo.name}
+            </Typography>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={handleAddFile}
+            >
+              + Add
             </Button>
-          </div>
-          {repo &&
-            repo.map((file) => (
-              <div
-                key={file._id}
-                onClick={() => handleFileClick(file)}
-                className={`border hover:bg-slate-400 hover:cursor-pointer transition flex items-center ${selectedFile?.name === file.name ? "bg-slate-600" : ""}`}>
-                <FileIcons extension={`.${file.type}`} /> &nbsp;
-                {file.name}
-              </div>
-            ))}
-          {newFileWindow && (
-            <div className="absolute top-[30vh] w-[14vw] p-[1vw]" style={{ zIndex: 100,border:"1px solid white" }}>
-              
-              <input
-                type="text"
+          </Box>
+
+          {repo.map((file) => (
+            <Box
+              key={file._id}
+              onClick={() => handleFileClick(file)}
+              className={`p-2 border-b flex items-center cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 transition ${
+                selectedFile?.name === file.name ? "bg-gray-400 dark:bg-gray-600" : ""
+              }`}
+            >
+              <FileIcons extension={`.${file.type}`} /> &nbsp;
+              <Typography>{file.name}</Typography>
+            </Box>
+          ))}
+
+          {/* Create File Dialog */}
+          <Dialog open={newFileWindow} onClose={() => setNewFileWindow(false)}>
+            <DialogTitle>Create New File</DialogTitle>
+            <DialogContent>
+              <TextField
+                autoFocus
+                fullWidth
+                margin="dense"
+                label="File Name (with extension)"
                 value={fileName}
-                name="name"
-                onChange={(e) => {
-                  setFileName(e.target.value);
-                }}
-                className="bg-slate-600"
+                onChange={(e) => setFileName(e.target.value)}
+                placeholder="example.js"
               />
-              <br />
-              <Button onClick={() => setNewFileWindow(false)}>Cancel</Button>
-              <Button onClick={addFile}>Create</Button>
-            </div>
-          )}
-        </div>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setNewFileWindow(false)} color="secondary">
+                Cancel
+              </Button>
+              <Button onClick={addFile} variant="contained">
+                Create
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Box>
       )}
     </div>
   );

@@ -1,16 +1,31 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import userModel from "../models/userModel.js";
+import otpGenerator from "otp-generator";
+import sendMail from '../services/mailer.js';
+const generateOtp = ()=>{
+    return otpGenerator.generate(6,{upperCaseAlphabets:false,specialChars:false});
+}
 const registerUser = async (req, res) => {
     const { name,email, password } = req.body;
     try {
         const userExists = await userModel.findOne({ email });
-        if (userExists) {
+        if (userExists && userExists.isVerified) {
             return res.status(400).json({ message: 'User already exists' });
         }
-        const user = await userModel.create({ name,email, password,teammates:[],repos:[] });
-        const token = jwt.sign({ id: user._id,email }, process.env.JWT_SECRET, { expiresIn: '30d' });
-        res.status(201).json({ token,user:{name,email,id:user._id},teammates:[] });
+        const otp = generateOtp();
+        if(userExists){
+            userExists.verificationCode = otp;
+            userExists.verificationCodeExpiry = new Date(Date.now()+ 5 * 60 * 1000);
+            await userExists.save();
+            await sendMail(email,"OTP for registering to CodeMeet",`Your OTP for registering CodeMeet is : ${otp}`);
+            return res.status(201).json({message:"User created"});
+        }
+        const user = await userModel.create({ name,email, password,teammates:[],repos:[],verificationCode:otp,verificationCodeExpiry:new Date(Date.now()+ 5 * 60 * 1000) });
+        await sendMail(email,"OTP for registering to CodeMeet",`Your OTP for registering CodeMeet is : ${otp}`);
+
+        return res.status(201).json({message:"User created"});
+
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
@@ -20,6 +35,7 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await userModel.findOne({ email });
+        // if(user.isVerified === false) return res.status(401).json({message:"Please verify your email before logging in."})
         if (user && password === user.password) {
             
             const token = jwt.sign({ id: user._id,email }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -120,4 +136,16 @@ const acceptInvite = async(req,res)=>{
     return res.status(200).json({message:"Invite accepted"});
 }
 
-export default {loginUser,registerUser,addTeamMate,getUser,getTeammates,getUserInvitations,acceptInvite};
+const verifyEmail = async(req,res)=>{
+    const {otp,email} = req.body;
+    const user = await userModel.findOne({email});
+    if(user.verificationCode === otp && Date.now()<=user.verificationCodeExpiry){
+        user.isVerified = true;
+        await user.save();
+        return res.status(200).json({message:"User verification succesful"});
+    }
+    else{
+        return res.status(400).json({message:"Incorrect OTP or OTP expired"});
+    }
+}
+export default {loginUser,registerUser,addTeamMate,getUser,getTeammates,getUserInvitations,acceptInvite,verifyEmail};

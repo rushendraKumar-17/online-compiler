@@ -13,7 +13,8 @@ const messageSchema = new mongoose.Schema({
 const contactSchema = new mongoose.Schema({
   name:{
     type:String
-  },email:{
+  },
+  email:{
     type:String
   },
   isAccepted:{
@@ -26,7 +27,16 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   repos: [mongoose.Types.ObjectId],
-  
+  verificationCode:{
+    type:String
+  },
+  verificationCodeExpiry:{
+    type:Date
+  },
+  isVerified:{
+    type:Boolean,
+    default:false
+  },
   teammates:[contactSchema],
   sharedRepos:[mongoose.Types.ObjectId],
   invitations:[String]

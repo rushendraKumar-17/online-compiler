@@ -75,3 +75,67 @@ Content-Type: application/json
 {
     "email":"priya@gmail.com"
 }
+
+
+###
+
+GET http://localhost:8000/test-mail
+
+
+###
+//register
+POST http://localhost:8000/api/user/register
+Content-Type: application/json
+
+{
+    "name":"rushi",
+    "email":"kingrushendra109@gmail.com",
+    "password":"1234"
+}
+
+###
+//verify-email
+POST http://localhost:8000/api/user/verify-email
+Content-Type: application/json
+
+{
+    "email":"kingrushendra109@gmail.com",
+    "otp":"o5aunf"
+}
+
+
+###
+//login
+POST http://localhost:8000/api/user/login
+Content-Type: application/json
+
+{
+    "email":"kingrushendra109@gmail.com",
+    "password":"1234"
+}
+
+
+###
+
+POST https://script.google.com/macros/s/AKfycbzInWNyDO_UZurwLK2nlWKFtnek3Oa-ZTX1ScCd-WAs4INAamwzRvsWhiQXD-er8XY/exec
+Content-Type: application/json
+
+{
+    "name":"Aashta Agarbatti 30.00",
+    "imageUrl":"test.jpg"
+}
+
+
+###
+POST https://api.cloudinary.com/v1_1/dcbtgukde/image/upload
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"
+
+https://th.bing.com/th/id/OIP.vpUUrAb6H7eMCIM4TRzpcAHaFj?cb=iwp2&rs=1&pid=ImgDetMain
+--WebAppBoundary
+Content-Disposition: form-data; name="upload_preset"
+
+testuploadpreset
+--WebAppBoundary--

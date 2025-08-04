@@ -6,7 +6,7 @@ import {BrowserRouter} from "react-router-dom";
 import { AppProvider } from './context/Context.jsx';
 import { SocketProvider } from './context/SocketProvider.jsx';
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
+  // <StrictMode>
     <AppProvider>
     <BrowserRouter>
     <SocketProvider>
@@ -14,5 +14,5 @@ createRoot(document.getElementById('root')).render(
     </SocketProvider>
     </BrowserRouter>
     </AppProvider>
-  </StrictMode>,
+  // </StrictMode>,
 )
