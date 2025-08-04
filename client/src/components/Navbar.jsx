@@ -9,6 +9,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const handleLogout = ()=>{
     navigate("/login");
+    setProfileOpen(false);
     logout();
   }
   return (

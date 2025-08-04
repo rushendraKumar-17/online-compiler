@@ -353,7 +353,8 @@ const App = () => {
       height: "100%",
       objectFit: "cover",
       borderRadius: "3vh",
-      display: video ? "block" : "none",  // Toggle visibility
+      display: video ? "block" : "none",  // Toggle visibility,
+      marginBottom:"1vh"
     }}
     srcObject={video ? userStream : null}  // Only set srcObject if video is enabled
   />

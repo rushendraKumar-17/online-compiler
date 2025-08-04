@@ -99,8 +99,9 @@ const Editor = ({ socket, id,closeEditor,code,changeCode,language,changeLanguage
         value={code}
         options={options}
         onChange={(newValue) => {
+          console.log(newValue)
           changeCode(newValue);
-          socket.emit("codeChange", { newValue, id });
+          socket.emit("codeChange", { code:newValue, id });
           console.log("Code change detected");
         }}
       />

@@ -7,6 +7,8 @@ import {
   Stack,
   Snackbar,
   Alert,
+  Paper,
+  Divider,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -17,7 +19,11 @@ const WelcomePage = () => {
   const { apiUrl } = useContext(AppContext);
   const navigate = useNavigate();
   const [meetingId, setMeetingId] = useState("");
-  const [snack, setSnack] = useState({ open: false, msg: "", severity: "info" });
+  const [snack, setSnack] = useState({
+    open: false,
+    msg: "",
+    severity: "info",
+  });
 
   const handleJoinMeeting = async (e) => {
     e.preventDefault();
@@ -27,67 +33,97 @@ const WelcomePage = () => {
       if (response.status === 200) {
         navigate(`/meet/join/${meetingId}`);
       } else {
-        setSnack({ open: true, msg: "This meeting is not available.", severity: "error" });
+        setSnack({
+          open: true,
+          msg: "This meeting is not available.",
+          severity: "error",
+        });
       }
     } catch {
-      setSnack({ open: true, msg: "This meeting is not available.", severity: "error" });
+      setSnack({
+        open: true,
+        msg: "This meeting is not available.",
+        severity: "error",
+      });
     }
   };
 
   const handleStartMeeting = async () => {
     const newMeetingId = `${nanoid(3)}-${nanoid(4)}-${nanoid(3)}`;
     await navigator.clipboard.writeText(newMeetingId);
-    setSnack({ open: true, msg: "Meeting ID copied to clipboard!", severity: "success" });
+    setSnack({
+      open: true,
+      msg: "Meeting ID copied to clipboard!",
+      severity: "success",
+    });
     navigate(`/meet/${newMeetingId}?isInitiator=true`);
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 540, width: "100%", mx: "auto" }}>
-      <Typography variant="h4" fontWeight={700} mb={1}>
-        Welcome to <span style={{ color: "#1976d2" }}>Code Meet</span>
-      </Typography>
-      <Typography variant="body1" color="text.secondary" mb={4}>
-        Collaborative coding made easy! <br />
-        Join an existing room or start a new one:
-      </Typography>
-      <Stack component="form" onSubmit={handleJoinMeeting} direction="row" spacing={2} alignItems="center" mb={2}>
-        <TextField
-          label="Meeting ID"
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(to right, #e0ecfc, #f4f9ff)", // gradient background
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        px: 2,
+      }}
+    >
+      <Paper elevation={3} sx={{ p: 4, width: "100%", maxWidth: 500, borderRadius: 4 }}>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Welcome to <span style={{ color: "#1976d2" }}>Code Meet</span>
+        </Typography>
+
+        <Typography variant="body1" color="text.secondary" mb={3}>
+          Start or join a collaborative coding session effortlessly.
+        </Typography>
+
+        <form onSubmit={handleJoinMeeting}>
+          <Stack spacing={2}>
+            <TextField
+              label="Enter Meeting ID"
+              variant="outlined"
+              fullWidth
+              value={meetingId}
+              onChange={(e) => setMeetingId(e.target.value)}
+              required
+            />
+            <Button type="submit" variant="contained" fullWidth size="large">
+              Join Meeting
+            </Button>
+          </Stack>
+        </form>
+
+        <Divider sx={{ my: 3 }}>or</Divider>
+
+        <Button
+          onClick={handleStartMeeting}
           variant="outlined"
-          size="small"
-          name="meetingId"
-          value={meetingId}
-          onChange={(e) => setMeetingId(e.target.value)}
-          sx={{ flexGrow: 1, bgcolor: "#f9f9fb" }}
-          required
-        />
-        <Button type="submit" variant="contained" disableElevation sx={{ minWidth: 100 }}>
-          Join
+          fullWidth
+          size="large"
+          sx={{
+            fontWeight: 600,
+            bgcolor: "#fff",
+            ":hover": {
+              bgcolor: "#e3eafc",
+              borderColor: "#1976d2",
+            },
+          }}
+        >
+          Start a New Meeting
         </Button>
-      </Stack>
-      <Typography align="center" color="text.secondary" my={2}>
-        or
-      </Typography>
-      <Button
-        onClick={handleStartMeeting}
-        variant="outlined"
-        fullWidth
-        sx={{
-          fontWeight: 600,
-          py: 1.2,
-          bgcolor: "#f7f7fa",
-          ":hover": { bgcolor: "#e3eafc" }
-        }}
-      >
-        Start a meeting
-      </Button>
+      </Paper>
+
       <Snackbar
         open={snack.open}
-        autoHideDuration={2500}
+        autoHideDuration={3000}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         onClose={() => setSnack({ ...snack, open: false })}
       >
-        <Alert severity={snack.severity}>{snack.msg}</Alert>
+        <Alert severity={snack.severity} variant="filled">
+          {snack.msg}
+        </Alert>
       </Snackbar>
     </Box>
   );
