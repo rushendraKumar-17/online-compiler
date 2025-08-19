@@ -11,6 +11,7 @@ import { Button } from "@mui/material";
 const App = () => {
   const socket = useSocket();
   const remoteStreamRef = useRef(new MediaStream());
+  const remoteUserSocketRef = useRef();
   const sharingScreenRef = useRef();
   const [messages, setMessages] = useState([]);
   const navigate = useNavigate();
@@ -122,7 +123,8 @@ const App = () => {
   const handleNegotiation = useCallback(async () => {
     console.log("Oops...nego needed");
     const offer = await peer.getOffer();
-    socket.emit("nego-needed", { offer, to: remoteUserSocket });
+    console.log(remoteUserSocketRef.current);
+    socket.emit("nego-needed", { offer, to: remoteUserSocketRef.current });
   }, []);
   const handleTrackEvent = (e) => {
     console.log("I am getting stream", e);
@@ -202,6 +204,7 @@ const App = () => {
     console.log("User joined:", newUserId);
     setRemoteUserSocket(newUserId);
     setRemoteUserName(name);
+    remoteUserSocketRef.current = from;
     const offer = await peer.getOffer();
     console.log("Created offer", offer);
     socket.emit("offer", { offer, to: newUserId, name: user.name });
