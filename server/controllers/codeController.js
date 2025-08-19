@@ -20,7 +20,7 @@ export const runCode = async (req, res) => {
 
       fs.writeFileSync(filePath, code);
 
-      const command = `python3 "${filePath}"`;
+      const command = `python "${filePath}"`;
       exec(command, (error, stdout, stderr) => {
         fs.unlinkSync(filePath);
 

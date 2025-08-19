@@ -30,13 +30,14 @@ const CodeEditor = () => {
   const [selectedFileContent, setSelectedFileContent] = useState(null);
   const [execResult,setExecResult] = useState();
   const setSelectedFileFn = (file) => {
+    console.log("select file function called");
     setSelectedFile(file);
     console.log("File selected:", file);
   };
   const handleKeyDown = (event) => {
     if (event.ctrlKey && event.key === "s") {
       event.preventDefault();
-      // console.log(selectedFile._id);
+      console.log(selectedFile);
       axios
         .post(`${apiUrl}/code/save/${selectedFile._id}`, {
           code: selectedFileContent,
@@ -52,7 +53,7 @@ const CodeEditor = () => {
         repo.forEach((file)=>{
           console.log(file.name)
           if(file.name === selectedFile.name){
-            console.log("Here")
+            
             file.content = selectedFileContent;
           }
         })
@@ -91,22 +92,21 @@ const CodeEditor = () => {
     })
     .then((res) => {
       setRepo(res.data);
-      console.log(res);
+      // console.log(res.data);
 
     })
     .catch((e) => console.log(e));
   }
   useEffect(() => {
     fetchRepo();
-    
   }, []);
 
   const [progress,setProgress] = useState(false);
   const handleRun = async () => {
-    console.log(selectedFileContent);
+    // console.log(selectedFileContent);
     setProgress(true);
     try{
-      console.log(language);
+      // console.log(language);
     const result = await axios
     .post(`${apiUrl}/code/run`, {
       code: selectedFileContent,
@@ -117,10 +117,10 @@ const CodeEditor = () => {
       }
     })
     setProgress(false);
-    console.log(result.data.output);
+    // console.log(result.data.output);
     setExecResult({result:result.data.output,error:false});
   }catch(e){
-    console.log(e);
+    // console.log(e);
     setProgress(false);
     setExecResult({result:e.response.data.error,error:true});
   }
@@ -134,10 +134,10 @@ const CodeEditor = () => {
   const handleFileSelection = (file)=>{
     console.log(file);
     setSelectedFile(file);
-    console.log("File:", file);
+    // console.log("File:", file);
     setLanguage(extensionMap[file.type]);
     setSelectedFileContent(file.content);
-    console.log(`File selected: ${file.name}`);
+    // console.log(`File selected: ${file.name}`);
   }
   
   const toggleShareWindow = () =>{
@@ -155,8 +155,8 @@ const CodeEditor = () => {
             className="cursor-pointer p-2 bg-gray-600 hover:bg-gray-500"
             onClick={() => {
               setFileBar(!fileBar);
-              setEditorWidth(fileBar ? "80vw" : "90vw");
-              console.log(editorWidth);
+              setEditorWidth("100%");
+              // console.log(editorWidth);
             }}>
             <File />
           </div>

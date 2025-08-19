@@ -10,15 +10,16 @@ import Invitations from "./Invitations.jsx";
 import ProtectedRoute from './ProtectedRoute.jsx';
 const Home = () => {
   const navigate = useNavigate();
-  const { user, apiUrl } = useContext(AppContext);
+  const { user, apiUrl,repos,setRepos,loading } = useContext(AppContext);
   const [repoName, setRepoName] = useState('');
   const [newRepoWindow, setNewRepoWindow] = useState(false);
   const token = localStorage.getItem('token');
-  const [repos,setRepos] = useState([]);
+ 
 
   const handleCreateNewRepo = async (e) => {
     e.preventDefault();
     console.log(repoName);
+    
     const response = await axios.post(`${apiUrl}/repo/new`, { name:repoName }, {
       headers: {
         Authorization: `Bearer ${token}`
@@ -26,16 +27,18 @@ const Home = () => {
     });
     console.log(response);
     if (response.status === 200) {
-      setRepos([...repos, response.data]);
+      setRepos([...repos,response.data.repo]);
       setNewRepoWindow(false);
       setRepoName('');
     }
 
   };
-
+ 
   return (
     <div className='flex h-[90vh] z-10 w-[98vw]'>
       <Sidebar/>
+      {loading ?<div>Loading...</div> :
+      <>
       <div className='w-full'>
       <Routes>
         <Route path='/' element={<WelcomePage />}/>
@@ -83,6 +86,8 @@ const Home = () => {
           </div>
         </div>
       )}
+    </>
+    }
     </div>
   );
 };

@@ -15,18 +15,19 @@ const registerUser = async (req, res) => {
         }
         const otp = generateOtp();
         if(userExists){
-            userExists.verificationCode = otp;
-            userExists.verificationCodeExpiry = new Date(Date.now()+ 5 * 60 * 1000);
+            // userExists.verificationCode = otp;
+            // userExists.verificationCodeExpiry = new Date(Date.now()+ 5 * 60 * 1000);
             await userExists.save();
-            await sendMail(email,"OTP for registering to CodeMeet",`Your OTP for registering CodeMeet is : ${otp}`);
+            // await sendMail(email,"OTP for registering to CodeMeet",`Your OTP for registering CodeMeet is : ${otp}`);
             return res.status(201).json({message:"User created"});
         }
         const user = await userModel.create({ name,email, password,teammates:[],repos:[],verificationCode:otp,verificationCodeExpiry:new Date(Date.now()+ 5 * 60 * 1000) });
-        await sendMail(email,"OTP for registering to CodeMeet",`Your OTP for registering CodeMeet is : ${otp}`);
+        // await sendMail(email,"OTP for registering to CodeMeet",`Your OTP for registering CodeMeet is : ${otp}`);
 
         return res.status(201).json({message:"User created"});
 
     } catch (error) {
+        console.log(error)
         res.status(500).json({ message: 'Server error' });
     }
 }

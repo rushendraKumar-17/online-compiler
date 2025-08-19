@@ -30,8 +30,9 @@ export const createNewRepo = async(req,res)=>{
     });
     user.repos.push(newRepo._id);
     user.save();
-    res.status(200).json({message:"New repository created"});
+    res.status(200).json({message:"New repository created",repo:newRepo});
 }catch(e){
+  console.log(e);
     res.status(500).json(e);
 }
 }

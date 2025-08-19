@@ -36,7 +36,7 @@ const RepositoriesPage = ({ props }) => {
   }, [user]);
 
   return (
-    <Container sx={{ mt: 2 }}>
+    <Container sx={{ mt: 3 }}>
       {/* <Paper elevation={3} sx={{ padding: 4, borderRadius: 3 }}> */}
         <Typography variant="h5" gutterBottom>
           Your Repositories

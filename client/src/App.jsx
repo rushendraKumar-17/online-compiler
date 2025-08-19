@@ -15,7 +15,7 @@ import { Alert, Snackbar } from '@mui/material';
 import AppContext from './context/Context';
 const App = () => {
   const navigate = useNavigate();
-  const {open,setOpen,alertType,alertMessage} = useContext(AppContext);
+  const {open,setOpen,alertType,alertMessage,loading} = useContext(AppContext);
   const handleClose = () => {
     setOpen(false);
   };
@@ -27,7 +27,9 @@ const App = () => {
           {alertMessage}
         </Alert>
       </Snackbar>
-     
+      {
+        loading ? <div>Loading...</div> :
+      
       <Routes>
         <Route path='*' element={<Home/>}/>
         <Route path='/home/*' element={<Home/>}/>
@@ -41,6 +43,7 @@ const App = () => {
         <Route path='/editor' element={<ProtectedRoute><Editor /></ProtectedRoute>}/>
         <Route path='/verify-email' element={<EmailVerification/>}/>
       </Routes>
+      }
     </div>
   )
 }
