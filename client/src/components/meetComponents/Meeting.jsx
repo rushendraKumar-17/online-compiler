@@ -204,7 +204,7 @@ const App = () => {
     console.log("User joined:", newUserId);
     setRemoteUserSocket(newUserId);
     setRemoteUserName(name);
-    remoteUserSocketRef.current = from;
+    remoteUserSocketRef.current = newUserId;
     const offer = await peer.getOffer();
     console.log("Created offer", offer);
     socket.emit("offer", { offer, to: newUserId, name: user.name });
