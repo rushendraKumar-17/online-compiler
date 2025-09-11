@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import React from "react";
 import { Popper, Paper, Typography, Button } from "@mui/material";
+import CallEndIcon from '@mui/icons-material/CallEnd';
 import {
   Mic,
   MicOff,
@@ -76,7 +77,9 @@ const Controls = (props) => {
           height: "4vw",
         }}
       >
-        <Unplug />
+        {/* <Unplug />
+         */}
+        <CallEndIcon />
       </Button>
       <Button
         ref={anchorRef}

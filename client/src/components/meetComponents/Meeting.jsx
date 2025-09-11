@@ -186,6 +186,7 @@ const App = () => {
       }
     });
 
+    navigate("/home")
     socket?.emit("leave-room", { roomId });
 
     socket?.disconnect();

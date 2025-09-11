@@ -70,6 +70,9 @@ export const AppProvider = ({ children }) => {
       console.log("Fetching data");
       fetchData(token);
     }
+    else{
+      setLoading(false)
+    }
   }, []);
 
   return (

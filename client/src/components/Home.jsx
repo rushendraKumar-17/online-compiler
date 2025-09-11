@@ -35,7 +35,7 @@ const Home = () => {
   };
  
   return (
-    <div className='flex h-[90vh] z-10 w-[98vw]'>
+    <div className='flex h-[91.3vh] z-10 w-[98vw]'>
       <Sidebar/>
       {loading ?<div>Loading...</div> :
       <>
